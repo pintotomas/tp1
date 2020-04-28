@@ -1,114 +1,29 @@
-/* server.c */
-#include <sys/types.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/socket.h>
+#include "socket.h"
 #include <netdb.h>
-#include <arpa/inet.h>
-
-#define BUF_SIZE 500
-#define ACCEPT_QUEUE_LEN 10
 
 int main(int argc, char *argv[]) {
-    struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    int sfd, s, newsockfd;
-    struct sockaddr_storage peer_addr;
-    socklen_t peer_addr_len;
-    ssize_t nread;
-    char buf[BUF_SIZE];
+    socket_t *socket = malloc(sizeof(socket_t));
+    char *port = "8080";
+    printf("HI");
+    if (socket_bind_and_listen(socket, port, AI_PASSIVE) != 0) return false;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s port\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
+    int client_skt_fd = socket_accept(socket);
+    socket_t *client_socket= malloc(sizeof(socket_t));
+    socket_init(client_socket, client_skt_fd);
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;       /* Allow IPv4 */
-    hints.ai_socktype = SOCK_STREAM; /* sequenced, reliable, two-way, connection-based byte  streams. */
-    hints.ai_flags = 0;
+    char msg[10] = {0};
+    printf("Receiving bytes from client\n");
+    ssize_t recv = socket_receive(client_socket, msg, 10);
+    printf("Bytes received!\n");
+    printf("Msg rcvd: %s\n", msg);
 
-    s = getaddrinfo(NULL, argv[1], &hints, &result);
-    if (s != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-        exit(EXIT_FAILURE);
-    }
-    /* getaddrinfo() returns a list of address structures.
-       Try each address until we successfully bind(2).
-       If socket(2) (or bind(2)) fails, we (close the socket
-       and) try the next address. */
-
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sfd == -1)
-            continue;
-
-        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
-            break;                  /* Success */
-
-        close(sfd);
-    }
-
-    if (rp == NULL) {               /* No address succeeded */
-        fprintf(stderr, "Could not bind\n");
-        exit(EXIT_FAILURE);
-    }
-    freeaddrinfo(result);           /* No longer needed */
-
-    listen(sfd, ACCEPT_QUEUE_LEN);
-
-    /*aceptar*/
-    char addressBuf[INET_ADDRSTRLEN];
-    struct sockaddr_in address;
-    socklen_t addressLength = (socklen_t) sizeof(address);
-
-    newsockfd = accept(sfd, (struct sockaddr *)&address,
-                           &addressLength);
-
-     if (newsockfd < 0) 
-          printf("ERROR on accept");
-	inet_ntop(AF_INET, &(address.sin_addr), addressBuf, INET_ADDRSTRLEN);
-    printf("Se conectó un usuario: %s\n", addressBuf);
-    /*fin aceptar*/
-    /* Read datagrams and echo them back to sender */
-
-    // for (;;) {
-    //     peer_addr_len = sizeof(struct sockaddr_storage);
-    //     nread = recvfrom(
-    //         sfd, buf, BUF_SIZE, 0, (struct sockaddr *) &peer_addr, &peer_addr_len
-    //     );
-    //     if (nread == -1)
-    //             continue;               /* Ignore failed request */
-
-    //     char host[NI_MAXHOST], service[NI_MAXSERV];
-
-    //     s = getnameinfo(
-    //         (struct sockaddr *) &peer_addr,
-    //         peer_addr_len,
-    //         host,
-    //         NI_MAXHOST,
-    //         service,
-    //         NI_MAXSERV,
-    //         NI_NUMERICSERV
-    //     );
-    //     if (s == 0)
-    //         printf("Received %zd bytes from %s:%s\n", nread, host, service);
-    //     else
-    //         fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-
-    //     if (
-    //         sendto(
-    //             sfd,
-    //             buf,
-    //             nread,
-    //             0,
-    //             (struct sockaddr *) &peer_addr,
-    //             peer_addr_len
-    //         ) != nread
-    //     ) {
-    //         fprintf(stderr, "Error sending response\n");
-    //     }
-    // }
+    char *msg_response = "Message received\n";
+    socket_send(client_socket, msg_response, 17);
+    socket_send(client_socket, msg_response, 17);
+    socket_send(client_socket, msg_response, 17);
+    
+    free(socket);
+    free(client_socket);
+    return true;
 }
