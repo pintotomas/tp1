@@ -2,6 +2,7 @@
 #include "socket.h"
 #include <sys/types.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -17,7 +18,7 @@ void socket_init(socket_t *self, int fd) {
 static struct addrinfo *_get_addrinfo(socket_t *self,
                           const char *host, const char *service, int flags) {
     struct addrinfo hints;
-    struct addrinfo *result, *rp;
+    struct addrinfo *result;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
@@ -31,84 +32,74 @@ static struct addrinfo *_get_addrinfo(socket_t *self,
     return result;
 }
 
-int socket_connect(socket_t *self, const char *host, const char *service, int flags){
+
+static int _bind(int sfd, struct addrinfo *rp){
+    if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
+        return 0;
+    }
+    return -1;
+}
+
+
+static int _connect(int sfd, struct addrinfo *rp){
+    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
+        return 0;
+    }
+    return -1;
+}
+
+static int _bind_or_accept(struct addrinfo *result, int (*f)(int, struct addrinfo *)){
+
+    /* Itera los resultados de _get_addrfinfo y aplica la funcion _bind o _connect a cada uno de los resultados.
+    Se debe pasar _bind o _connect como parametro f
+
+    Retorna -1 en caso de no poder bindear ni conectar e imrpime en stderr, si no, se devuelve
+    el resultado positivo de accept o bind  */
+
+    int sfd;
+    struct addrinfo *rp;
+    //Itero la lista de resultados posibles
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sfd == -1) {
+            continue;
+        }
+        if ((*f)(sfd, rp) == 0) {
+            break; /* Success */   
+        }
+        close(sfd);
+    }
+
+    if (rp == NULL) {               /* No address succeeded */
+        fprintf(stderr, "Error: %s\n", strerror(errno));
+        return -1;
+    }
+    return sfd;
+}
+
+int socket_connect(socket_t *self, const char *host, const char *service){
     /*Devuelve 0 en caso de exito, 1 en caso de error (Y queda en manos del usuario del
     TDA liberar a self) */
 
-    // struct addrinfo hints;
-    // struct addrinfo *result, *rp;
-    struct addrinfo *result, *rp;
-    result = _get_addrinfo(self, host, service, flags);
-
-    // memset(&hints, 0, sizeof(struct addrinfo));
-    // hints.ai_family = AF_INET;       /* Allow IPv4 */
-    // hints.ai_socktype = SOCK_STREAM;  sequenced, reliable, two-way, connection-based byte  streams. 
-    // hints.ai_flags = flags;
-    // int s = getaddrinfo(host, service, &hints, &result);
-
-    // if (s != 0) {
-    //     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-    //     return 1;
-    // }
-    //Itero la lista de resultados posibles
-    int sfd;
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sfd == -1) {
-            continue;
-        }
-        if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
-            break; /* Success */   
-        }
-        close(sfd);
-    }
-
-    if (rp == NULL) {               /* No address succeeded */
-        fprintf(stderr, "Could not connect\n");
-        return 1;
-    }
+    struct addrinfo *result;
+    result = _get_addrinfo(self, host, service, 0);
+    int sfd = _bind_or_accept(result, _connect);
     self->fd = sfd;
-    freeaddrinfo(result);           /* No longer needed */
+    freeaddrinfo(result); 
     return 0;
+
 }
+
+
  
 
-int socket_bind_and_listen(socket_t *self, const char *service, int flags) {
+int socket_bind_and_listen(socket_t *self, const char *service) {
 
-    // struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    
-    // memset(&hints, 0, sizeof(struct addrinfo));
-    // hints.ai_family = AF_INET;       /* Allow IPv4 */
-    // hints.ai_socktype = SOCK_STREAM;  sequenced, reliable, two-way, connection-based byte  streams. 
-    // hints.ai_flags = flags;
-    // int s = getaddrinfo(NULL, service, &hints, &result);
-    result = _get_addrinfo(self, NULL, service, flags);
-    // if (s != 0) {
-    //     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-    //     return 1;
-    // }
-    //Itero la lista de resultados posibles
-    int sfd;
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sfd == -1) {
-            continue;
-        }
-        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
-            break; /* Success */   
-        }
-        close(sfd);
-    }
-
-    if (rp == NULL) {               /* No address succeeded */
-        fprintf(stderr, "Could not bind\n");
-        return 1;
-    }
-
+    struct addrinfo *result;
+    result = _get_addrinfo(self, NULL, service, AI_PASSIVE);
+    int sfd = _bind_or_accept(result, _bind);
     self->fd = sfd;
-
-    freeaddrinfo(result);           /* No longer needed */
+    freeaddrinfo(result);
     return listen(self->fd, ACCEPT_QUEUE_LEN);
 
 }
@@ -120,12 +111,10 @@ int socket_accept(socket_t *self) {
     int newsockfd = accept(self->fd, (struct sockaddr *)&address, &addressLength);
     int val = 1;
     setsockopt(self->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
-    
     if (newsockfd < 0) {
         return 1;
     }
     inet_ntop(AF_INET, &(address.sin_addr), addressBuf, INET_ADDRSTRLEN);
-    printf("Se conectó un usuario: %s\n", addressBuf);
     return newsockfd;
 }
 
@@ -173,10 +162,12 @@ ssize_t socket_receive(socket_t *self, void *message, size_t length){
     return bytes_rcvd;
 }
 
-void socket_destroy(socket_t *self) {
+void socket_release(socket_t *self) {
     if (!self) return;
+    if(!self->fd) return;
+    if(self->fd == -1) return;
     if (shutdown(self->fd, SHUT_RDWR) == -1) {
-        fprintf(stderr, "socket_destroy failed at shutdown: %s\n", strerror(errno));
+        fprintf(stderr, "socket_destroy failed at shutdown: %s. FD is %d\n", strerror(errno), self->fd);
     }
     if (close(self->fd) == -1) {
         fprintf(stderr, "socket_destroy failed at close: %s\n", strerror(errno));

@@ -6,15 +6,19 @@ int main(int argc, char *argv[]) {
 	
     socket_t *socket = malloc(sizeof(socket_t));
     char *port = "8080";
-    printf("HI");
-    if (socket_bind_and_listen(socket, port, AI_PASSIVE) != 0) return false;
+    if (socket_bind_and_listen(socket, port) != 0) { 
+    	socket_release(socket);
+    	free(socket);
+    	return false;
+    }
 
     int client_skt_fd = socket_accept(socket);
     socket_t *client_socket= malloc(sizeof(socket_t));
     socket_init(client_socket, client_skt_fd);
 
     char msg[5] = {0};
-    ssize_t recv = socket_receive(client_socket, msg, 5);
+    //ssize_t recv = socket_receive(client_socket, msg, 5);
+    socket_receive(client_socket, msg, 5);
     printf("Msg rcvd from client: %s", msg);
 
     char *msg_response = "Mundo\n";

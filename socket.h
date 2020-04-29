@@ -18,9 +18,9 @@ typedef struct {
 
 void socket_init(socket_t *self, int fd);
 
-int socket_connect(socket_t *self, const char *host, const char *service, int flags);
+int socket_connect(socket_t *self, const char *host, const char *service);
 
-int socket_bind_and_listen(socket_t *self, const char *service, int flags);
+int socket_bind_and_listen(socket_t *self, const char *service);
 
 int socket_accept(socket_t *self);
 
