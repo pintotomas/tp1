@@ -32,23 +32,8 @@ static struct addrinfo *_get_addrinfo(socket_t *self,
     return result;
 }
 
-
-static int _bind(int sfd, struct addrinfo *rp){
-    if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
-        return 0;
-    }
-    return -1;
-}
-
-
-static int _connect(int sfd, struct addrinfo *rp){
-    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
-        return 0;
-    }
-    return -1;
-}
-
-static int _bind_or_accept(struct addrinfo *result, int (*f)(int, struct addrinfo *)){
+static int _bind_or_accept(struct addrinfo *result, int (*f)(int , const struct sockaddr *,
+                socklen_t )){
 
     /* Itera los resultados de _get_addrfinfo y aplica la funcion _bind o _connect a cada uno de los resultados.
     Se debe pasar _bind o _connect como parametro f
@@ -64,7 +49,7 @@ static int _bind_or_accept(struct addrinfo *result, int (*f)(int, struct addrinf
         if (sfd == -1) {
             continue;
         }
-        if ((*f)(sfd, rp) == 0) {
+        if ((*f)(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
             break; /* Success */   
         }
         close(sfd);
@@ -83,21 +68,19 @@ int socket_connect(socket_t *self, const char *host, const char *service){
 
     struct addrinfo *result;
     result = _get_addrinfo(self, host, service, 0);
-    int sfd = _bind_or_accept(result, _connect);
+    int sfd = _bind_or_accept(result, connect);
+
     self->fd = sfd;
     freeaddrinfo(result); 
     return 0;
 
 }
 
-
- 
-
 int socket_bind_and_listen(socket_t *self, const char *service) {
 
     struct addrinfo *result;
     result = _get_addrinfo(self, NULL, service, AI_PASSIVE);
-    int sfd = _bind_or_accept(result, _bind);
+    int sfd = _bind_or_accept(result, bind);
     self->fd = sfd;
     freeaddrinfo(result);
     return listen(self->fd, ACCEPT_QUEUE_LEN);
