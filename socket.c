@@ -32,15 +32,13 @@ static struct addrinfo *_get_addrinfo(socket_t *self,
     return result;
 }
 
-static int _bind_or_accept(struct addrinfo *result, int (*f)(int , const struct sockaddr *,
-                socklen_t )){
-
+static int _bind_or_accept(struct addrinfo *result, 
+    int (*f)(int , const struct sockaddr *, socklen_t)){
     /* Itera los resultados de _get_addrfinfo y aplica la funcion _bind o _connect a cada uno de los resultados.
     Se debe pasar _bind o _connect como parametro f
 
     Retorna -1 en caso de no poder bindear ni conectar e imrpime en stderr, si no, se devuelve
     el resultado positivo de accept o bind  */
-
     int sfd;
     struct addrinfo *rp;
     //Itero la lista de resultados posibles
@@ -73,25 +71,23 @@ int socket_connect(socket_t *self, const char *host, const char *service){
     self->fd = sfd;
     freeaddrinfo(result); 
     return 0;
-
 }
 
 int socket_bind_and_listen(socket_t *self, const char *service) {
-
     struct addrinfo *result;
     result = _get_addrinfo(self, NULL, service, AI_PASSIVE);
     int sfd = _bind_or_accept(result, bind);
     self->fd = sfd;
     freeaddrinfo(result);
     return listen(self->fd, ACCEPT_QUEUE_LEN);
-
 }
 
 int socket_accept(socket_t *self) {
     char addressBuf[INET_ADDRSTRLEN];
     struct sockaddr_in address;
     socklen_t addressLength = (socklen_t) sizeof(address);
-    int newsockfd = accept(self->fd, (struct sockaddr *)&address, &addressLength);
+    int newsockfd = accept(self->fd, 
+        (struct sockaddr *)&address, &addressLength);
     int val = 1;
     setsockopt(self->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
     if (newsockfd < 0) {
@@ -135,7 +131,7 @@ ssize_t socket_receive(socket_t *self, void *message, size_t length){
                      remaining_bytes, 0);
         if (last_bytes_rcvd == -1) {
             bytes_rcvd = -1;
-            fprintf(stderr, "socket_receive failed at recv: %s\n", strerror(errno));
+            fprintf(stderr, "fail at recv: %s\n", strerror(errno));
             break;
         }
         if (last_bytes_rcvd == 0) break;
@@ -147,12 +143,12 @@ ssize_t socket_receive(socket_t *self, void *message, size_t length){
 
 void socket_release(socket_t *self) {
     if (!self) return;
-    if(!self->fd) return;
-    if(self->fd == -1) return;
+    if (!self->fd) return;
+    if (self->fd == -1) return;
     if (shutdown(self->fd, SHUT_RDWR) == -1) {
-        fprintf(stderr, "socket_destroy failed at shutdown: %s. FD is %d\n", strerror(errno), self->fd);
+        fprintf(stderr, "destroy failed at shutdown: %s", strerror(errno));
     }
     if (close(self->fd) == -1) {
-        fprintf(stderr, "socket_destroy failed at close: %s\n", strerror(errno));
+        fprintf(stderr, "destroy failed at close: %s\n", strerror(errno));
     }
 }

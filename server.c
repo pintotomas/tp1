@@ -3,7 +3,6 @@
 #include <netdb.h>
 
 int main(int argc, char *argv[]) {
-	
     socket_t *socket = malloc(sizeof(socket_t));
     char *port = "8080";
     if (socket_bind_and_listen(socket, port) != 0) { 
