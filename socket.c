@@ -13,14 +13,54 @@ void socket_init(socket_t *self, int fd) {
     self->fd = fd;
 }
 
-bool socket_connect(socket_t *self, const char *host, const char *service){
-    return true;
- }
+int socket_connect(socket_t *self, const char *host, const char *service, int flags){
+    /*Devuelve 0 en caso de exito, 1 en caso de error (Y queda en manos del usuario del
+    TDA liberar a self) */
+
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    
+
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;       /* Allow IPv4 */
+    hints.ai_socktype = SOCK_STREAM; /* sequenced, reliable, two-way, connection-based byte  streams. */
+    hints.ai_flags = flags;
+    //int s = getaddrinfo(NULL, argv[1], &hints, &result);
+    int s = getaddrinfo(host, service, &hints, &result);
+
+    if (s != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+        return 1;
+    }
+    //Itero la lista de resultados posibles
+    int sfd;
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sfd == -1) {
+            continue;
+        }
+        if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
+            break; /* Success */   
+        }
+        close(sfd);
+    }
+
+    if (rp == NULL) {               /* No address succeeded */
+        fprintf(stderr, "Could not connect\n");
+        return 1;
+    }
+    self->fd = sfd;
+    freeaddrinfo(result);           /* No longer needed */
+    return 0;
+}
+ 
 
 int socket_bind_and_listen(socket_t *self, const char *service, int flags) {
 
     struct addrinfo hints;
     struct addrinfo *result, *rp;
+    
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;       /* Allow IPv4 */
     hints.ai_socktype = SOCK_STREAM; /* sequenced, reliable, two-way, connection-based byte  streams. */
@@ -49,7 +89,9 @@ int socket_bind_and_listen(socket_t *self, const char *service, int flags) {
         fprintf(stderr, "Could not bind\n");
         return 1;
     }
+
     self->fd = sfd;
+
     freeaddrinfo(result);           /* No longer needed */
     return listen(self->fd, ACCEPT_QUEUE_LEN);
 
@@ -60,7 +102,9 @@ int socket_accept(socket_t *self) {
     struct sockaddr_in address;
     socklen_t addressLength = (socklen_t) sizeof(address);
     int newsockfd = accept(self->fd, (struct sockaddr *)&address, &addressLength);
-
+    int val = 1;
+    setsockopt(self->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+    
     if (newsockfd < 0) {
         return 1;
     }
