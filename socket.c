@@ -13,26 +13,43 @@ void socket_init(socket_t *self, int fd) {
     self->fd = fd;
 }
 
+
+static struct addrinfo *_get_addrinfo(socket_t *self,
+                          const char *host, const char *service, int flags) {
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = flags;
+    int addr_err = getaddrinfo(host, service, &hints, &result);
+    if (addr_err != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addr_err));
+        return NULL;
+    }
+    return result;
+}
+
 int socket_connect(socket_t *self, const char *host, const char *service, int flags){
     /*Devuelve 0 en caso de exito, 1 en caso de error (Y queda en manos del usuario del
     TDA liberar a self) */
 
-    struct addrinfo hints;
+    // struct addrinfo hints;
+    // struct addrinfo *result, *rp;
     struct addrinfo *result, *rp;
-    
+    result = _get_addrinfo(self, host, service, flags);
 
+    // memset(&hints, 0, sizeof(struct addrinfo));
+    // hints.ai_family = AF_INET;       /* Allow IPv4 */
+    // hints.ai_socktype = SOCK_STREAM;  sequenced, reliable, two-way, connection-based byte  streams. 
+    // hints.ai_flags = flags;
+    // int s = getaddrinfo(host, service, &hints, &result);
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;       /* Allow IPv4 */
-    hints.ai_socktype = SOCK_STREAM; /* sequenced, reliable, two-way, connection-based byte  streams. */
-    hints.ai_flags = flags;
-    //int s = getaddrinfo(NULL, argv[1], &hints, &result);
-    int s = getaddrinfo(host, service, &hints, &result);
-
-    if (s != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-        return 1;
-    }
+    // if (s != 0) {
+    //     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+    //     return 1;
+    // }
     //Itero la lista de resultados posibles
     int sfd;
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -58,20 +75,19 @@ int socket_connect(socket_t *self, const char *host, const char *service, int fl
 
 int socket_bind_and_listen(socket_t *self, const char *service, int flags) {
 
-    struct addrinfo hints;
+    // struct addrinfo hints;
     struct addrinfo *result, *rp;
     
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;       /* Allow IPv4 */
-    hints.ai_socktype = SOCK_STREAM; /* sequenced, reliable, two-way, connection-based byte  streams. */
-    hints.ai_flags = flags;
-    //int s = getaddrinfo(NULL, argv[1], &hints, &result);
-    int s = getaddrinfo(NULL, service, &hints, &result);
-
-    if (s != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-        return 1;
-    }
+    // memset(&hints, 0, sizeof(struct addrinfo));
+    // hints.ai_family = AF_INET;       /* Allow IPv4 */
+    // hints.ai_socktype = SOCK_STREAM;  sequenced, reliable, two-way, connection-based byte  streams. 
+    // hints.ai_flags = flags;
+    // int s = getaddrinfo(NULL, service, &hints, &result);
+    result = _get_addrinfo(self, NULL, service, flags);
+    // if (s != 0) {
+    //     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+    //     return 1;
+    // }
     //Itero la lista de resultados posibles
     int sfd;
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -133,6 +149,8 @@ ssize_t socket_send(socket_t *self, const void *message, size_t length) {
     }
     return bytes_sent;
 }
+
+
 
 ssize_t socket_receive(socket_t *self, void *message, size_t length){
     if (length == 0) return 0;
