@@ -1,5 +1,5 @@
-#ifndef TP1_SOCKET_H
-#define TP1_SOCKET_H
+#ifndef _SOCKET_H
+#define _SOCKET_H
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -31,4 +31,4 @@ ssize_t socket_receive(socket_t *self, void *response, size_t length);
 void socket_release(socket_t *self);
 
 
-#endif //TP1_SOCKET_H
+#endif //_SOCKET_H

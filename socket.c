@@ -50,6 +50,7 @@ static int _bind_or_accept(struct addrinfo *result,
         if ((*f)(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
             break; /* Success */   
         }
+        shutdown(sfd, SHUT_RDWR);
         close(sfd);
     }
 
@@ -67,22 +68,27 @@ int socket_connect(socket_t *self, const char *host, const char *service){
     struct addrinfo *result;
     result = _get_addrinfo(self, host, service, 0);
     int sfd = _bind_or_accept(result, connect);
-
+    printf("SFD: %d\n",sfd);
     self->fd = sfd;
     freeaddrinfo(result); 
     return 0;
 }
 
 int socket_bind_and_listen(socket_t *self, const char *service) {
+    /*Retorna 0 en caso de exito, -1 si falla el bind o listen*/
     struct addrinfo *result;
     result = _get_addrinfo(self, NULL, service, AI_PASSIVE);
     int sfd = _bind_or_accept(result, bind);
+    if (sfd == -1) {
+        return -1;
+    }
     self->fd = sfd;
     freeaddrinfo(result);
     return listen(self->fd, ACCEPT_QUEUE_LEN);
 }
 
 int socket_accept(socket_t *self) {
+    /*Devuelve -1 en caso de error, y el nuevo fd en caso de exito*/
     char addressBuf[INET_ADDRSTRLEN];
     struct sockaddr_in address;
     socklen_t addressLength = (socklen_t) sizeof(address);
@@ -91,7 +97,7 @@ int socket_accept(socket_t *self) {
     int val = 1;
     setsockopt(self->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
     if (newsockfd < 0) {
-        return 1;
+        return -1;
     }
     inet_ntop(AF_INET, &(address.sin_addr), addressBuf, INET_ADDRSTRLEN);
     return newsockfd;
@@ -145,6 +151,7 @@ void socket_release(socket_t *self) {
     if (!self) return;
     if (!self->fd) return;
     if (self->fd == -1) return;
+    printf("FD: %d\n", self->fd);
     if (shutdown(self->fd, SHUT_RDWR) == -1) {
         fprintf(stderr, "destroy failed at shutdown: %s", strerror(errno));
     }
