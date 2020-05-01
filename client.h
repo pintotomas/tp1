@@ -7,13 +7,14 @@
 
 typedef struct {
     protocol_t *protocol;
+    FILE *input;
 } client_t;
 
 
-int client_main(int argc, char *argv[]);
+int main(int argc, char *argv[]);
 
 // Devuelve falso si falla la inicializacion del struct client_t
-bool client_init(client_t *self, char *host, char *port);
+bool client_init(client_t *self, char *host, char *port, char *filename);
 
 //Interaccion con el server
 void client_run(client_t *self);

@@ -10,7 +10,7 @@ typedef struct {
 
 // Finaliza una vez que el primer cliente se conecta con el server
 // y envia todo lo que tenga que enviar
-int server_main(int argc, char *argv[]);
+int main(int argc, char *argv[]);
 
 // Se retorna false si falla algo en la inicializacion
 bool server_init(server_t *self, char *port);

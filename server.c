@@ -4,12 +4,12 @@
 
 int main(int argc, char *argv[]) {
 
-	if (argc != 3) {
-    	fprintf(stderr, "Uso: ./tp server <puerto> (Ej: ./tp server 8080)\n");
+	if (argc != 2) {
+    	fprintf(stderr, "Uso: ./server <puerto> (Ej: ./server 8080)\n");
     	return 1;
     }
     server_t server;
-    if (!server_init(&server, argv[2])) return 1;
+    if (!server_init(&server, argv[1])) return 1;
     server_run(&server);
     server_destroy(&server);
     return 0;
@@ -61,6 +61,8 @@ void server_run(server_t *self){
     while (true) {
         char buffer[5] = {0};
         if (protocol_server_receive(self->protocol, buffer) <= 0) break; //Termino si no recibo nada mas del cliente
+        printf("*******RECEIVED MESSAGE***********\n");
+        printf("MESSAGE: %s", buffer);
         char *buffer2 = "Mundo\n";
         protocol_server_send(self->protocol, buffer2);
     }
