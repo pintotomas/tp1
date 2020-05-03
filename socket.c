@@ -55,7 +55,7 @@ static int _bind_or_accept(struct addrinfo *result,
     }
 
     if (rp == NULL) {               /* No address succeeded */
-        fprintf(stderr, "Error: %s\n", strerror(errno));
+        fprintf(stderr, "_bind_or_accept: %s\n", strerror(errno));
         return -1;
     }
     return sfd;

@@ -13,30 +13,6 @@ int main(int argc, char *argv[]) {
     server_run(&server);
     server_destroy(&server);
     return 0;
- //    socket_t *socket = malloc(sizeof(socket_t));
- //    char *port = "8080";
- //    if (socket_bind_and_listen(socket, port) != 0) { 
- //    	printf("HOLA");
- //    	socket_release(socket);
- //    	free(socket);
- //    	return false;
- //    }
- //    int client_skt_fd = socket_accept(socket);
- //    socket_t *client_socket= malloc(sizeof(socket_t));
- //    socket_init(client_socket, client_skt_fd);
-
- //    char msg[5] = {0};
- //    //ssize_t recv = socket_receive(client_socket, msg, 5);
- //    socket_receive(client_socket, msg, 5);
- //    printf("Msg rcvd from client: %s", msg);
-
- //    char *msg_response = "Mundo\n";
- //    socket_send(client_socket, msg_response, 6);
-	// socket_release(socket);
-	// socket_release(client_socket);
- //    free(socket);
- //    free(client_socket);
- //    return true;
 }
 
 bool server_init(server_t *self, char *port){
@@ -63,7 +39,8 @@ void server_run(server_t *self){
         if (protocol_server_receive(self->protocol, buffer) <= 0) break; //Termino si no recibo nada mas del cliente
         printf("*******RECEIVED MESSAGE***********\n");
         printf("MESSAGE: %s", buffer);
-        char *buffer2 = "Mundo\n";
+        char *buffer2 = "Mund\n";
+        fflush(stdin);
         protocol_server_send(self->protocol, buffer2);
     }
 }

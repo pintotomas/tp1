@@ -1,5 +1,5 @@
 #include "protocol.h"
-
+#include <string.h>
 bool protocol_server_init(protocol_t *self, const char *port) {
     socket_t *socket = malloc(sizeof(socket_t));
     if (socket_bind_and_listen(socket, port) == -1){
@@ -48,7 +48,8 @@ bool protocol_server_accept(protocol_t *self){
 ssize_t protocol_client_send(protocol_t *self, char *buffer) {
 
     //char *msg = "Hola\n";
-    return socket_send(self->server_socket, buffer, 5);
+    printf("SENDING SOCKET_SEND: = %s\n", buffer);
+    return socket_send(self->server_socket, buffer, strlen(buffer) * sizeof(char));
 }
 
 ssize_t protocol_client_receive(protocol_t *self, char *buffer) {

@@ -2,12 +2,14 @@
 #define _CLIENT_H
 
 #include "protocol.h"
+#include "input_reader.h"
 #include <stdbool.h>
 
+#define MAX_INPUT_SIZE 5
 
 typedef struct {
     protocol_t *protocol;
-    FILE *input;
+    input_reader_t *input_reader;
 } client_t;
 
 
