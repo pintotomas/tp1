@@ -50,17 +50,28 @@ bool protocol_server_accept(protocol_t *self){
 ssize_t protocol_client_send(protocol_t *self, char *buffer) {
 
     //char *msg = "Hola\n";
-    int body_length;
-    unsigned char* body = create_send_message(buffer, &body_length);
+    //int body_length;
+    dbus_t *dbus_encoder = malloc(sizeof(dbus_t));
+    dbus_encoder_init(dbus_encoder, buffer);
+    //unsigned char* body = create_send_message(buffer, &body_length);
+    dbus_encoder_create_send_message(dbus_encoder);
     // //printf("*************AT PROTOCOL********************\n");
     printf("@@@@@@@Sending 10 bytes@@@@@@\n");
     // for (int j = 0; j < body_length; j++) {
     //     printf("Current byte: %x\n", body[j]);   
     //     //printf("Current byte: %x\n", body[j]);    
     // } 
-    ssize_t bytes_sent = socket_send(self->server_socket, body, body_length);
-    free(body);
+    for (int j = 0; j < dbus_encoder->body_length; j++) {
+        printf("Current byte: %x\n", dbus_encoder->body[j]);  
+    } 
+    ssize_t bytes_sent = socket_send(self->server_socket, dbus_encoder->body, dbus_encoder->body_length);
+
+
+    //free(body);
+    dbus_encoder_destroy(dbus_encoder);
+    free(dbus_encoder);
     return bytes_sent;
+    
 }
 
 ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
@@ -69,7 +80,7 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
 
 ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
     
-    ssize_t received = socket_receive(self->client_socket, buffer, 10);
+    ssize_t received = socket_receive(self->client_socket, buffer, 8);
     printf("@@@@@@@Received 10 bytes@@@@@@\n");
     for (int j = 0; j < 10; j++) {
         printf("Current byte: %x\n", buffer[j]);   

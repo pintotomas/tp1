@@ -8,12 +8,25 @@ para que lo procese
 
 Devuelve NULL si la linea es invalida (No tiene 4 argumentos)*/
 
-// typedef struct {
-//     unsigned char *body;
-//     int body_length;
-// } dbus_t;
+typedef struct {
+    unsigned char *body;
+    unsigned char *header;
+    char *line_to_encode;
+    int header_length; //Contando los ultimos bytes de padding
+    int body_length;
+} dbus_t;
 
 
-unsigned char* create_send_message(char *line, int *body_length); 
+//unsigned char* dbus_create_send_message(dbus_t *self, char *line, int *body_length); 
+//unsigned char* dbus_create_send_message(dbus_t *self, char *line); 
+
+bool dbus_encoder_create_send_message(dbus_t *self); 
+
+/* line debe ser un puntero no nulo */
+void dbus_encoder_init(dbus_t *self, char *line);
+
+void dbus_encoder_destroy(dbus_t *self);
+
+
 
 #endif

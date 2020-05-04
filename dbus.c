@@ -7,7 +7,7 @@
    Se utiliza por primera vez el delimitador delim1, y luego delim2 hasta finalizar el recorrido del string.
    si se pasa por parametro delim3, se aplicara antes de iniciar los demas splits
  */
-static bool _split(char *line, char* strings[], size_t size, char *delim1, char *delim2, char *delim3) {
+bool _split(char *line, char* strings[], size_t size, char *delim1, char *delim2, char *delim3) {
     
     char *token = line;
     if (delim3 != NULL) {
@@ -28,7 +28,7 @@ static bool _split(char *line, char* strings[], size_t size, char *delim1, char 
     return true;
 }
 
-static int _count_chars(const char* string, char ch)
+int _count_chars(const char* string, char ch)
 {
     int count = 0;
     int i;
@@ -149,9 +149,11 @@ int _calculate_header_size(char* params[], int args_quantity, int params_quantit
 /* Genera un header de largo header_size bytes 
 params debe estar en el orden <destino> <path> <interfaz> <metodo>
 */
-void _create_header(char* params[], int args_quantity, int header_size, int body_size, int params_q) {
+unsigned char* _create_header(char* params[], int args_quantity, int header_size, int body_size, int params_q) {
 
     printf("@@@@@@@@@@@BODY SIZE@@@@@@@@@@@: %d\n", body_size);
+    unsigned char *s_ptr;
+
     unsigned char header[header_size];
     uint32_t body_size_32 = ((uint32_t) body_size);
     unsigned char h1[16] = {0x6c, 0x01, 0x00, 0x01};
@@ -231,6 +233,12 @@ void _create_header(char* params[], int args_quantity, int header_size, int body
     }
     printf("@@@@@@@@@@@LAST PADDING·@@@@@@@@@@: %d\n", last_padding);
 
+    s_ptr = malloc(sizeof(unsigned char) * header_size);
+    memcpy(s_ptr, header, header_size);
+
+
+    return s_ptr;   
+
     // for (int i = 0; i < 4; i++) {
     //     // printf("param: %s\n",params[i]);
     //     // printf("Strlen: %ld\n",strlen(params[i]));
@@ -248,13 +256,32 @@ void _create_header(char* params[], int args_quantity, int header_size, int body
     // }
 }
 
-unsigned char* create_send_message(char *line, int *body_length) {
+
+void dbus_encoder_init(dbus_t *self, char *line) {
+
+    self->header_length = 0;
+    self->body_length = 0;
+    self->body = NULL;
+    self->header = NULL;
+    self->line_to_encode = line;
+
+}
+
+void dbus_encoder_destroy (dbus_t *self) {
+    if (self->body != NULL) free(self->body);
+    if (self->header != NULL) free(self->header);
+} 
+//unsigned char* create_send_message(dbus_t self*, char *line, int *body_length) {
+//unsigned char* create_send_message(dbus_t self*, char *line) {
+//void _create_send_message(dbus_t self*, char *line) {
+bool dbus_encoder_create_send_message(dbus_t *self) {
 
     //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..))
     char *args[4] = {0}; 
-    unsigned char *body = NULL;
-    int body_length_calc = 0;
-    if (!_split(line, args, 4, " ", " ", NULL)) return false;
+    //unsigned char *body = NULL;
+    //int body_length_calc = 0;
+    //if (!_split(line, args, 4, " ", " ", NULL)) return false;
+    if (!_split(self->line_to_encode, args, 4, " ", " ", NULL)) return false;
     int open_parentheses = _count_chars(args[3], '(');
     int closing_parentheses = _count_chars(args[3], ')');
     if ((open_parentheses != closing_parentheses) || (open_parentheses > 1)) return false;
@@ -263,14 +290,22 @@ unsigned char* create_send_message(char *line, int *body_length) {
     char *method[params_quantity];
     if (!_split(args[3], method, params_quantity, "(", ",", ")"));
     if (params_quantity > 1) {
-        body_length_calc = _calculate_body_length(method, params_quantity);
-        body = _make_body(method, params_quantity, body_length_calc);
+        //body_length_calc = _calculate_body_length(method, params_quantity);
+        self->body_length = _calculate_body_length(method, params_quantity);
+        //body = _make_body(method, params_quantity, body_length_calc);
+        self->body = _make_body(method, params_quantity, self->body_length);
     }
 
-    *body_length = body_length_calc;
-    int header_size = _calculate_header_size(args, 4, params_quantity - 1);
-    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", header_size);
-    _create_header(args, 4, header_size, body_length_calc, params_quantity - 1);
+    //*body_length = body_length_calc;
+    //int header_size = _calculate_header_size(args, 4, params_quantity - 1);
+    self->header_length = _calculate_header_size(args, 4, params_quantity - 1);
+
+    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", self->header_length);
+    //_create_header(args, 4, header_size, body_length_calc, params_quantity - 1);
+    self->header = _create_header(args, 4, self->header_length, self->body_length, params_quantity - 1);
+    return true;
+
+
     // for (int j = 0; j < body_length_calc; j++) {
     //     printf("Current byte: %x\n", body[j]);   
     //     //printf("Current byte: %x\n", body[j]);    
@@ -279,5 +314,5 @@ unsigned char* create_send_message(char *line, int *body_length) {
     // printf("destino: %s\n", args[1]);
     // printf("interfaz: %s\n", args[2]);
 
-    return body;
+    //return body;
 }
