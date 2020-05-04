@@ -65,9 +65,9 @@ char* input_reader_get_next_line(input_reader_t *self) {
         }
         return NULL;
     }
-    for (int i = 0; i < strlen(line); i++) {
-        printf("%02X\n", (unsigned char)line[i]);
-    }
+    // for (int i = 0; i < strlen(line); i++) {
+    //     printf("%02X\n", (unsigned char)line[i]);
+    // }
 
     return line;
 }

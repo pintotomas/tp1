@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "client.h"
-#include "dbus.h"
 #include <netdb.h>
 
 
@@ -48,7 +47,7 @@ void client_run(client_t *self) {
     	buffer = input_reader_get_next_line(self->input_reader);
     	if (buffer == NULL) return;
         printf("\nNEW LINE: %s\n", buffer);
-        get_send_message(buffer);
+        
         /* TO DO: Antes de enviar, procesar lo recibido y armar la cadena correspondiente segun al enunciado */
         ssize_t send = protocol_client_send(self->protocol, buffer);
         printf("SENTD %ld BYTES\n", send);

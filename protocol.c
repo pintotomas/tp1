@@ -1,5 +1,6 @@
 #include "protocol.h"
 #include <string.h>
+
 bool protocol_server_init(protocol_t *self, const char *port) {
     socket_t *socket = malloc(sizeof(socket_t));
     if (socket_bind_and_listen(socket, port) == -1){
@@ -9,6 +10,7 @@ bool protocol_server_init(protocol_t *self, const char *port) {
 
     self->server_socket = socket;
     self->client_socket = NULL;
+
     return true;
 }
 
@@ -36,7 +38,7 @@ bool protocol_client_init(protocol_t *self, const char *host, const char *port){
 bool protocol_server_accept(protocol_t *self){
 
     int client_socket = socket_accept(self->server_socket);
-    if (client_socket == -1){
+    if (client_socket == -1) {
         free(self->server_socket);
         return false;
     }
@@ -48,8 +50,16 @@ bool protocol_server_accept(protocol_t *self){
 ssize_t protocol_client_send(protocol_t *self, char *buffer) {
 
     //char *msg = "Hola\n";
-    printf("SENDING SOCKET_SEND: = %s\n", buffer);
-    return socket_send(self->server_socket, buffer, strlen(buffer) * sizeof(char));
+    int body_length;
+    unsigned char* body = create_send_message(buffer, &body_length);
+    // //printf("*************AT PROTOCOL********************\n");
+    printf("@@@@@@@Sending 10 bytes@@@@@@\n");
+    for (int j = 0; j < body_length; j++) {
+        printf("Current byte: %x\n", body[j]);   
+        //printf("Current byte: %x\n", body[j]);    
+    } 
+    ssize_t bytes_sent = socket_send(self->server_socket, body, body_length);
+    return bytes_sent;
 }
 
 ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
@@ -57,7 +67,14 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
 }
 
 ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
-    return socket_receive(self->client_socket, buffer, 5);
+    
+    ssize_t received = socket_receive(self->client_socket, buffer, 10);
+    printf("@@@@@@@Received 10 bytes@@@@@@\n");
+    for (int j = 0; j < 10; j++) {
+        printf("Current byte: %x\n", buffer[j]);   
+        //printf("Current byte: %x\n", body[j]);    
+    } 
+    return received;
 }
 
 ssize_t protocol_server_send(protocol_t *self, char *buffer) {
@@ -73,4 +90,5 @@ void protocol_destroy(protocol_t *self) {
     printf("self->client_socket->fd = %d\n", self->client_socket->fd);
     socket_release(self->client_socket);
     free(self->client_socket);
+
 }

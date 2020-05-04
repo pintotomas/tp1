@@ -2,6 +2,7 @@
 #define _PROTOCOL_H
 
 #include "socket.h"
+#include "dbus.h"
 #include <sys/types.h>
 
 typedef struct {
