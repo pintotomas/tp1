@@ -45,24 +45,28 @@ int _count_chars(const char* string, char ch)
     return count;
 }
 
-int _calculate_body_length(char* strings[], int params_quantity) {
+void _calculate_body_length(dbus_encoder_t *self, char* strings[], int params_quantity) {
     int body_total_length = 0;
     for (int i= 1; i < params_quantity; i++) {
         //Por cada parametro necesito 4 bytes p/ header y luego el str y el 00
         body_total_length += 4 + strlen(strings[i]) + 1;
     }    
-    return body_total_length;
+    self->body_length = body_total_length;
 }   
 
-unsigned char* _make_body(char* strings[], int params_quantity, int body_length) {
+void _make_body(dbus_encoder_t *self, char* strings[], int params_quantity) {
+
+
 
     // int body_total_length = 0;
     // for (int i= 1; i < params_quantity; i++) {
     //     //Por cada parametro necesito 4 bytes p/ header y luego el str y el 00
     //     body_total_length += 4 + strlen(strings[i]) + 1;
     // }   
-    unsigned char body[body_length];
-    unsigned char *s_ptr;
+    //unsigned char body[body_length];
+    unsigned char body[self->body_length];
+
+    //unsigned char *s_ptr;
     //unsigned char *body = malloc(sizeof(unsigned char) * (body_length));  
 
     int body_position = 0;
@@ -86,11 +90,13 @@ unsigned char* _make_body(char* strings[], int params_quantity, int body_length)
     //     printf("Current byte: %x\n", body[j]);   
     //     //printf("Current byte: %x\n", body[j]);    
     // }
-    s_ptr = malloc(sizeof(unsigned char) * body_length);
-    memcpy(s_ptr, body, body_length);
+    //s_ptr = malloc(sizeof(unsigned char) * self->body_length);
+    self->body = malloc(sizeof(unsigned char) * self->body_length);
+    //memcpy(s_ptr, body, self->body_length);
+    memcpy(self->body, body, self->body_length);
 
 
-    return s_ptr;   
+    //return s_ptr;   
     //self->body_length = body_length;
     // uint32_t size_first_param = strlen(strings[1]);
     // uint32_t little_endian = htonl(size_first_param);
@@ -114,7 +120,7 @@ int _get_closest_multiply(int n, int multiply) {
     }
     return x;
 }
-int _calculate_header_size(char* params[], int args_quantity, int params_quantity) {
+void _calculate_header_size(dbus_encoder_t *self, char* params[], int args_quantity, int params_quantity) {
     //16 bytes fijos 
     int header_size = 16; 
     for (int i = 0; i < args_quantity; i++) {
@@ -142,33 +148,34 @@ int _calculate_header_size(char* params[], int args_quantity, int params_quantit
         // (O el ultimo)
         header_size += _get_closest_multiply(bytes_firma, 8);
     }
-    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", header_size);
-    return header_size;
+    self->header_length = header_size;
+    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", self->header_length);
+    //return header_size;
 }
 
 /* Genera un header de largo header_size bytes 
 params debe estar en el orden <destino> <path> <interfaz> <metodo>
 */
-unsigned char* _create_header(char* params[], int args_quantity, int header_size, int body_size, int params_q) {
+void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int params_q) {
 
-    printf("@@@@@@@@@@@BODY SIZE@@@@@@@@@@@: %d\n", body_size);
-    unsigned char *s_ptr;
+    printf("@@@@@@@@@@@BODY SIZE@@@@@@@@@@@: %d\n", self->body_length);
+    //unsigned char *s_ptr;
 
-    unsigned char header[header_size];
-    uint32_t body_size_32 = ((uint32_t) body_size);
+    unsigned char header[self->header_length];
+    uint32_t body_length32 = ((uint32_t) self->body_length);
     unsigned char h1[16] = {0x6c, 0x01, 0x00, 0x01};
     //body_size_32 = htonl(body_size_32); --para despues
     int header_position = 0;
     memcpy(&header[header_position], &h1, 4);
     header_position += 4;
-    memcpy(&header[header_position], &body_size_32, 4);
+    memcpy(&header[header_position], &body_length32, 4);
     header_position += 4;
     unsigned char message_id[16] = {0x02, 0x00, 0x00, 0x00};
     memcpy(&header[header_position], &message_id, 4);
     header_position +=4;
     //Posicion del header size: 4+4+4: 12
-    unsigned char dummy_header_size[16] = {0xff, 0xff, 0xff, 0xff};
-    memcpy(&header[header_position], &dummy_header_size, 4);
+    unsigned char dummy_header_length[16] = {0xff, 0xff, 0xff, 0xff};
+    memcpy(&header[header_position], &dummy_header_length, 4);
     header_position +=4;
     //array con las descripciones de cada parametro a enviar.
     unsigned char array[4][4] =
@@ -218,13 +225,13 @@ unsigned char* _create_header(char* params[], int args_quantity, int header_size
 
     }
 
-    uint32_t real_header_size = header_size;
+    uint32_t real_header_length = self->header_length;
     if (last_padding > 1) {
-        real_header_size -= last_padding;
-        real_header_size++; //Siempre tiene que haber un /0 al final.
+        real_header_length -= last_padding;
+        real_header_length++; //Siempre tiene que haber un /0 al final.
     }
     //Reemplazo por tamaño del header sin tener en cuenta ultimo padding
-    memcpy(&header[12], &real_header_size, 4);
+    memcpy(&header[12], &real_header_length, 4);
 
     for (int j = 0; j < header_position; j++) {
         printf("Current byte: %x (char: %c)\n", header[j], header[j]);
@@ -233,11 +240,13 @@ unsigned char* _create_header(char* params[], int args_quantity, int header_size
     }
     printf("@@@@@@@@@@@LAST PADDING·@@@@@@@@@@: %d\n", last_padding);
 
-    s_ptr = malloc(sizeof(unsigned char) * header_size);
-    memcpy(s_ptr, header, header_size);
+    //s_ptr = malloc(sizeof(unsigned char) * self->header_length);
+    self->header = malloc(sizeof(unsigned char) * self->header_length);
+    //memcpy(s_ptr, header, self->header_length);
+    memcpy(self->header, header, self->header_length);
 
 
-    return s_ptr;   
+//    return s_ptr;   
 
     // for (int i = 0; i < 4; i++) {
     //     // printf("param: %s\n",params[i]);
@@ -257,7 +266,7 @@ unsigned char* _create_header(char* params[], int args_quantity, int header_size
 }
 
 
-void dbus_encoder_init(dbus_t *self, char *line) {
+void dbus_encoder_init(dbus_encoder_t *self, char *line) {
 
     self->header_length = 0;
     self->body_length = 0;
@@ -267,14 +276,12 @@ void dbus_encoder_init(dbus_t *self, char *line) {
 
 }
 
-void dbus_encoder_destroy (dbus_t *self) {
+void dbus_encoder_destroy (dbus_encoder_t *self) {
     if (self->body != NULL) free(self->body);
     if (self->header != NULL) free(self->header);
 } 
-//unsigned char* create_send_message(dbus_t self*, char *line, int *body_length) {
-//unsigned char* create_send_message(dbus_t self*, char *line) {
-//void _create_send_message(dbus_t self*, char *line) {
-bool dbus_encoder_create_send_message(dbus_t *self) {
+
+bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
 
     //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..))
     char *args[4] = {0}; 
@@ -291,18 +298,28 @@ bool dbus_encoder_create_send_message(dbus_t *self) {
     if (!_split(args[3], method, params_quantity, "(", ",", ")"));
     if (params_quantity > 1) {
         //body_length_calc = _calculate_body_length(method, params_quantity);
-        self->body_length = _calculate_body_length(method, params_quantity);
+        //self->body_length = _calculate_body_length(self, method, params_quantity);
+        _calculate_body_length(self, method, params_quantity);
+
         //body = _make_body(method, params_quantity, body_length_calc);
-        self->body = _make_body(method, params_quantity, self->body_length);
+        //self->body = _make_body(self, method, params_quantity, self->body_length);
+        //self->body = _make_body(self, method, params_quantity);
+        _make_body(self, method, params_quantity);
+
+
     }
 
     //*body_length = body_length_calc;
     //int header_size = _calculate_header_size(args, 4, params_quantity - 1);
-    self->header_length = _calculate_header_size(args, 4, params_quantity - 1);
+    //self->header_length = _calculate_header_size(args, 4, params_quantity - 1);
+    _calculate_header_size(self, args, 4, params_quantity - 1);
 
     printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", self->header_length);
     //_create_header(args, 4, header_size, body_length_calc, params_quantity - 1);
-    self->header = _create_header(args, 4, self->header_length, self->body_length, params_quantity - 1);
+    //self->header = _create_header(args, 4, self->header_length, self->body_length, params_quantity - 1);
+    //_create_header(self, args, 4, self->header_length, self->body_length, params_quantity - 1);
+    _create_header(self, args, 4, params_quantity - 1);
+    
     return true;
 
 

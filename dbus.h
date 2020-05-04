@@ -14,18 +14,15 @@ typedef struct {
     char *line_to_encode;
     int header_length; //Contando los ultimos bytes de padding
     int body_length;
-} dbus_t;
+} dbus_encoder_t;
 
 
-//unsigned char* dbus_create_send_message(dbus_t *self, char *line, int *body_length); 
-//unsigned char* dbus_create_send_message(dbus_t *self, char *line); 
-
-bool dbus_encoder_create_send_message(dbus_t *self); 
+bool dbus_encoder_create_send_message(dbus_encoder_t *self); 
 
 /* line debe ser un puntero no nulo */
-void dbus_encoder_init(dbus_t *self, char *line);
+void dbus_encoder_init(dbus_encoder_t *self, char *line);
 
-void dbus_encoder_destroy(dbus_t *self);
+void dbus_encoder_destroy(dbus_encoder_t *self);
 
 
 
