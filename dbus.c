@@ -82,10 +82,10 @@ unsigned char* _make_body(char* strings[], int params_quantity, int body_length)
         // } 
     } 
     //self->body = s_ptr;
-    for (int j = 0; j < body_length; j++) {
-        printf("Current byte: %x\n", body[j]);   
-        //printf("Current byte: %x\n", body[j]);    
-    }
+    // for (int j = 0; j < body_length; j++) {
+    //     printf("Current byte: %x\n", body[j]);   
+    //     //printf("Current byte: %x\n", body[j]);    
+    // }
     s_ptr = malloc(sizeof(unsigned char) * body_length);
     memcpy(s_ptr, body, body_length);
 
@@ -101,7 +101,151 @@ unsigned char* _make_body(char* strings[], int params_quantity, int body_length)
     // printf("length: %d\n", little_endian);
     // printf("length: %d\n", ntohl(little_endian)); //);
 
+}
 
+//Devuelve el numero mas cercano de n que es multiplo de 8 (Mayor o igual a n)
+int _get_closest_multiply(int n, int multiply) {
+    int x = 0;
+    if ((n % multiply) == 0) {
+        x = n;
+    }
+    else {
+        x = n + (8 - n % 8);
+    }
+    return x;
+}
+int _calculate_header_size(char* params[], int args_quantity, int params_quantity) {
+    //16 bytes fijos 
+    int header_size = 16; 
+    for (int i = 0; i < args_quantity; i++) {
+        //4 bytes para la descripcion del parametro + 
+        //4 bytes para la longitud del parametro
+        header_size += 8; 
+        //longitud de la descripcion del param + \0
+        int z = strlen(params[i]) + 1;
+        //Alineo a 8 bytes
+        int x = _get_closest_multiply(z, 8);
+        header_size += x;
+
+        // printf("Closest multiple of 8: %d\n", x);
+    }
+    if (params_quantity > 0) {
+        printf("PARAMS QUANTITY: %d\n", params_quantity);
+        int bytes_firma = 0;
+        bytes_firma += 4; //4 bytes para describir (3 y un 00)  
+        //1 byte entero c/cantidad de params, \0 y ademas 
+        //1 's' por cada parametro (1 byte x cada param)
+        //Resto 1 porque se esta contando tambien el nombre del metodo
+        bytes_firma += 2 + params_quantity; 
+        // Recordar que cuando especificamos la longitud en el header
+        // No debemos contar los bytes que vienen de alinear la firma
+        // (O el ultimo)
+        header_size += _get_closest_multiply(bytes_firma, 8);
+    }
+    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", header_size);
+    return header_size;
+}
+
+/* Genera un header de largo header_size bytes 
+params debe estar en el orden <destino> <path> <interfaz> <metodo>
+*/
+void _create_header(char* params[], int args_quantity, int header_size, int body_size, int params_q) {
+
+    printf("@@@@@@@@@@@BODY SIZE@@@@@@@@@@@: %d\n", body_size);
+    unsigned char header[header_size];
+    uint32_t body_size_32 = ((uint32_t) body_size);
+    unsigned char h1[16] = {0x6c, 0x01, 0x00, 0x01};
+    //body_size_32 = htonl(body_size_32); --para despues
+    int header_position = 0;
+    memcpy(&header[header_position], &h1, 4);
+    header_position += 4;
+    memcpy(&header[header_position], &body_size_32, 4);
+    header_position += 4;
+    unsigned char message_id[16] = {0x02, 0x00, 0x00, 0x00};
+    memcpy(&header[header_position], &message_id, 4);
+    header_position +=4;
+    //Posicion del header size: 4+4+4: 12
+    unsigned char dummy_header_size[16] = {0xff, 0xff, 0xff, 0xff};
+    memcpy(&header[header_position], &dummy_header_size, 4);
+    header_position +=4;
+    //array con las descripciones de cada parametro a enviar.
+    unsigned char array[4][4] =
+{
+    { 0x01, 0x01, 0x6f, 0x00 },
+    { 0x06, 0x01, 0x73, 0x00 },
+    { 0x02, 0x01, 0x73, 0x00 },
+    { 0x03, 0x01, 0x73, 0x00 }
+};
+    int last_padding;
+    for (int u = 0; u < args_quantity; u++) {
+        last_padding = _get_closest_multiply(strlen(params[u]) + 1, 8) - strlen(params[u]);
+        memcpy(&header[header_position], &array[u], 4);
+        header_position += 4;
+        uint32_t len = (uint32_t) strlen(params[u]);
+        memcpy(&header[header_position], &len, 4);
+        header_position += 4;
+        memcpy(&header[header_position], params[u], strlen(params[u]));
+        header_position += strlen(params[u]);
+        for (int k = 0; k < last_padding; k++) {
+            memcpy(&header[header_position], "\0", 1);
+            header_position++;
+        }
+
+
+        //printf("For the string: %s with length: %ld we have to add a padding of: %d\n", params[u], strlen(params[u]), last_padding);
+    }
+
+    if (params_q > 0) {
+        // 4 bytes de header, 1 p/cant de params 1 's' por cada
+        // param, y un /0 al final (Por eso el +6). Completa con /0 para alinear.
+        unsigned char h_params[16] = {0x08, 0x01, 0x67, 0x00};
+        memcpy(&header[header_position], &h_params, 4);
+        header_position += 4;
+        unsigned char uc_params_q = (unsigned char) params_q;
+        memcpy(&header[header_position], &uc_params_q, 1);
+        header_position ++;
+        for (int z = 0; z < uc_params_q; z++) {
+            memcpy(&header[header_position], "s", 1);
+            header_position++;
+        }
+        last_padding = _get_closest_multiply(params_q + 6, 8) - (params_q + 5);
+        for (int k = 0; k < last_padding; k++) {
+            memcpy(&header[header_position], "\0", 1);
+            header_position++;
+        }
+
+    }
+
+    uint32_t real_header_size = header_size;
+    if (last_padding > 1) {
+        real_header_size -= last_padding;
+        real_header_size++; //Siempre tiene que haber un /0 al final.
+    }
+    //Reemplazo por tamaño del header sin tener en cuenta ultimo padding
+    memcpy(&header[12], &real_header_size, 4);
+
+    for (int j = 0; j < header_position; j++) {
+        printf("Current byte: %x (char: %c)\n", header[j], header[j]);
+
+        //printf("Current byte: %x\n", body[j]);    
+    }
+    printf("@@@@@@@@@@@LAST PADDING·@@@@@@@@@@: %d\n", last_padding);
+
+    // for (int i = 0; i < 4; i++) {
+    //     // printf("param: %s\n",params[i]);
+    //     // printf("Strlen: %ld\n",strlen(params[i]));
+    //     // printf("Strlen + /0: %ld\n",strlen(params[i]) + 1);
+    //     int z = strlen(params[i]) + 1;
+    //     int x;
+    //     if ((z % 8) == 0) {
+    //         x = z;
+    //     }
+    //     else {
+    //         x = z + (8 - z % 8);
+    //     }
+    //     x = x;
+    //     //printf("Closest multiple of 8: %d\n", x);
+    // }
 }
 
 unsigned char* create_send_message(char *line, int *body_length) {
@@ -124,6 +268,9 @@ unsigned char* create_send_message(char *line, int *body_length) {
     }
 
     *body_length = body_length_calc;
+    int header_size = _calculate_header_size(args, 4, params_quantity - 1);
+    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", header_size);
+    _create_header(args, 4, header_size, body_length_calc, params_quantity - 1);
     // for (int j = 0; j < body_length_calc; j++) {
     //     printf("Current byte: %x\n", body[j]);   
     //     //printf("Current byte: %x\n", body[j]);    

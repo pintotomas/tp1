@@ -54,11 +54,12 @@ ssize_t protocol_client_send(protocol_t *self, char *buffer) {
     unsigned char* body = create_send_message(buffer, &body_length);
     // //printf("*************AT PROTOCOL********************\n");
     printf("@@@@@@@Sending 10 bytes@@@@@@\n");
-    for (int j = 0; j < body_length; j++) {
-        printf("Current byte: %x\n", body[j]);   
-        //printf("Current byte: %x\n", body[j]);    
-    } 
+    // for (int j = 0; j < body_length; j++) {
+    //     printf("Current byte: %x\n", body[j]);   
+    //     //printf("Current byte: %x\n", body[j]);    
+    // } 
     ssize_t bytes_sent = socket_send(self->server_socket, body, body_length);
+    free(body);
     return bytes_sent;
 }
 
