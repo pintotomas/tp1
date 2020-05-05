@@ -8,32 +8,11 @@
    si se pasa por parametro delim3, se aplicara antes de iniciar los demas splits
  */
 
-bool _split(char *line, char* strings[], size_t size,
-     char *delim1, char *delim2, char *delim3) {
-    char *token = line;
-    if (delim3 != NULL) {
-        token = strtok(line, delim3);
-    } 
-    token = strtok(token, delim1); 
-    int i = 0;
-    strings[i] = token;
-    i++;
-    while (i < size) { 
-        token = strtok(NULL, delim2);
-        if (token == NULL) return false;
-        strings[i] = token;
-        i++;
-
-    } 
-    return true;
-}
-
 int _count_chars(const char* string, char ch)
 {
     int count = 0;
     int i;
     int length = strlen(string);
-
     for (i = 0; i < length; i++)
     {
         if (string[i] == ch)
@@ -41,7 +20,6 @@ int _count_chars(const char* string, char ch)
             count++;
         }
     }
-
     return count;
 }
 
