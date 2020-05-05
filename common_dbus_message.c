@@ -30,9 +30,9 @@ void dbus_message_str_representation(dbus_message_t *self) {
 	bytes[2] = (self->id_mensaje >> 8) & 0xFF;
 	bytes[3] = self->id_mensaje & 0xFF;
 	printf("* Id: 0x%02x%02x%02x%02x\n", bytes[0], bytes[1], bytes[2], bytes[3]);
-	printf("* Destino: %s\n", self->interfaz);
-	printf("* Interfaz: %s\n", self->destino);
-	printf("* Método: %s\n", self->metodo);
+	printf("* Destino: %s\n", self->destino);
+	printf("* Interfaz: %s\n", self->interfaz);
+	printf("* Metodo: %s\n", self->metodo);
 	if (self->cantidad_parametros > 0) { 
 		printf("* Parametros:\n");
 		for (int i = 0; i < self->cantidad_parametros; i++) {
