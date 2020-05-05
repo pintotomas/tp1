@@ -45,7 +45,7 @@ static void _print_client_response(char *msg, int id) {
     bytes[1] = (id >> 16) & 0xFF;
     bytes[2] = (id >> 8) & 0xFF;
     bytes[3] = id & 0xFF;
-    printf("* Id: 0x%02x%02x%02x%02x: %s",
+    printf("0x%02x%02x%02x%02x: %s",
      bytes[0], bytes[1], bytes[2], bytes[3], msg);
 }
 
