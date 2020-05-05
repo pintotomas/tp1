@@ -260,29 +260,111 @@ static char **_split2(const char *str, char sep){
     return cadena_separada; 
     }
 
+static size_t caracteres_strv(char** strv, size_t *cantidad_subcadenas){
+    size_t cantidad_letras = 0;
+    size_t subcadenas = 0;
+    size_t palabra_actual = 0;
+    size_t letra_palabra_actual = 0;
+    while (strv[palabra_actual] != NULL){
+        while (strv[palabra_actual][letra_palabra_actual] != '\0'){
+            cantidad_letras++;
+            letra_palabra_actual++;
+            }
+        subcadenas++;
+        palabra_actual++;
+        letra_palabra_actual = 0;
+        }
+    if (cantidad_subcadenas){
+        *cantidad_subcadenas = subcadenas;
+        }
+    return cantidad_letras;
+    }
+
+static char *_join(char **strv, char sep){
+
+    size_t *subcads = malloc(sizeof(size_t));
+    if (!subcads || !strv){
+        free(subcads);
+        return NULL;
+        }
+    size_t letras_strv = caracteres_strv(strv,subcads);
+//Deberia restar uno porque no habria que agregar un separador al final, pero como necesito el \0 lo dejo tal cual
+    size_t tamano_str = letras_strv+*subcads; 
+    if (tamano_str == 0){
+        tamano_str = 2;
+        }
+    char* resultado = malloc((tamano_str)*(sizeof(char)));
+    if (!resultado){
+        free(subcads);
+        return NULL;
+        }
+    size_t pos_resultado = 0;
+    size_t palabra = 0;
+    size_t letra_palabra = 0;
+    while (strv[palabra] != NULL){
+        while (strv[palabra][letra_palabra] != '\0'){ 
+            resultado[pos_resultado] = strv[palabra][letra_palabra];
+            pos_resultado++;
+            letra_palabra++;
+            }
+        if (strv[palabra+1]){
+            resultado[pos_resultado] = sep;
+            pos_resultado++;
+            }
+        palabra++;
+        letra_palabra = 0;
+        }
+    resultado[pos_resultado] = '\0';
+    free(subcads);
+    return resultado;
+    }
+
+int _strv_len (char *strv[]) {
+    int len = 0;
+    while (strv[len] != NULL){
+        len++;
+    }
+    return len;
+}
+
 bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
-    //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..))
-    char **args2 = _split2(self->line_to_encode, ' ');
-    int open_parentheses = _count_chars(args2[3], '(');
-    int closing_parentheses = _count_chars(args2[3], ')');
+    //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..)<)
+    char **args = _split2(self->line_to_encode, ' ');
+    int args_len = _strv_len(args);
+
+    if (args_len > 4) { //Hay espacios en los parametros
+        char *firma_funcion = _join(args + 3, ' ');
+            //Libero lo que sobra y setteo args
+        for (int i = 3; i < args_len; i++) {
+            free(args[i]);
+            args[i] = NULL;
+        }
+        args[3] = firma_funcion;
+    }
+
+    int open_parentheses = _count_chars(args[3], '(');
+    int closing_parentheses = _count_chars(args[3], ')');
     if ((open_parentheses != closing_parentheses) ||
                             (open_parentheses > 1)) return false;
+    
     int params_quantity = 0;
-    //int params_quantity = 0;
     if (open_parentheses == 1) { 
-        int index_open_parentheses = _get_index(args2[3], '(');
-        int index_closing_parentheses = _get_index(args2[3], ')');
-        int commas = _count_chars(args2[3], ',');
+        int index_open_parentheses = _get_index(args[3], '(');
+        int index_closing_parentheses = _get_index(args[3], ')');
+        int commas = _count_chars(args[3], ',');
         if ( (index_closing_parentheses - index_open_parentheses)
              > 1) params_quantity = commas + 1;
     }
+
     char **method_params = NULL;
     char **method_params1 = NULL;
     char **method_params2 = NULL;
+
+
     if (params_quantity >= 1) { 
-        method_params1 = _split2(args2[3], '(');
-        free(args2[3]);
-        args2[3] = method_params1[0];
+        method_params1 = _split2(args[3], '(');
+        free(args[3]);
+        args[3] = method_params1[0];
         method_params1[0] = malloc((sizeof(char))); //Puntero dummy
         method_params2 = _split2(method_params1[1], ')');
         method_params = _split2(method_params2[0], ',');
@@ -293,9 +375,9 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
         _make_body(self, method_params, params_quantity);
     }
 
-    _calculate_header_size(self, args2, 4, params_quantity);
-    _create_header(self, args2, 4, params_quantity);
-    free_strv(args2);
+    _calculate_header_size(self, args, 4, params_quantity);
+    _create_header(self, args, 4, params_quantity);
+    free_strv(args);
 
     if (method_params1 != NULL) free_strv(method_params1);
     if (method_params2 != NULL) free_strv(method_params2);
