@@ -282,6 +282,7 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
     int closing_parentheses = _count_chars(args2[3], ')');
     if ((open_parentheses != closing_parentheses) || (open_parentheses > 1)) return false;
     int params_quantity = 1;
+    //int params_quantity = 0;
     if (open_parentheses == 1) { 
         int index_open_parentheses = _get_index(args2[3], '(');
         int index_closing_parentheses = _get_index(args2[3], ')');
@@ -289,21 +290,44 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
         if ( (index_closing_parentheses - index_open_parentheses)
              > 1) params_quantity = commas + 1 + params_quantity;
     }
+    char **method_params = NULL;
+    if (params_quantity - 1  >= 1) { 
+        char **method_params1 = _split2(args2[3], '(');
+        printf("@@@@@@@@@@SPLIT (@@@@@@@@@@@@%d\n", params_quantity);
+        char **method_params2 = _split2(method_params1[1], ')');
+        printf("Actual: %s\n", method_params2[0]);
+        method_params = _split2(method_params2[0], ',');
+        for (int k = 0; k < params_quantity - 1; k++) {
+            printf("PARAMETROOOOO: %s\n", method_params[k]);
+        }
+
+    
+        free_strv(method_params1);
+        free_strv(method_params2);
+        free_strv(method_params);
+    }
+
     char *method[params_quantity];
+
     if (!_split(args2[3], method, params_quantity, "(", ",", ")"));
 
     if (params_quantity > 1) {
         _calculate_body_length(self, method, params_quantity);
         _make_body(self, method, params_quantity);
     }
+
     else if (strcmp(&method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1],
             "\n") == 0) { 
         //Elimino el caracter de newline del ultimo parametro
         method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1] = '\0'; 
     }
+    for (int u = 0; u < params_quantity; u++) {
+        printf("Param[%d] = %s\n",u ,method[u]);
+    }
     _calculate_header_size(self, args2, 4, params_quantity - 1);
     _create_header(self, args2, 4, params_quantity - 1);
     free_strv(args2);
+    if (method_params != NULL) free_strv(method_params);
     return true;
 }
 
