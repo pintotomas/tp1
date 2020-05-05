@@ -47,7 +47,7 @@ int _count_chars(const char* string, char ch)
 
 void _calculate_body_length(dbus_encoder_t *self, char* strings[], int params_quantity) {
     int body_total_length = 0;
-    for (int i= 1; i < params_quantity; i++) {
+    for (int i= 0; i < params_quantity; i++) {
         //Por cada parametro necesito 4 bytes p/ header y luego el str y el 00
         body_total_length += 4 + strlen(strings[i]) + 1;
     }    
@@ -57,7 +57,7 @@ void _calculate_body_length(dbus_encoder_t *self, char* strings[], int params_qu
 void _make_body(dbus_encoder_t *self, char* strings[], int params_quantity) {
     unsigned char body[self->body_length];
     int body_position = 0;
-    for (int k= 1; k < params_quantity; k++) {
+    for (int k= 0; k < params_quantity; k++) {
         uint32_t bytes_quantity = strlen(strings[k]);
         memcpy(&body[body_position], &bytes_quantity, 4);
         body_position += 4;
@@ -281,52 +281,39 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
     int open_parentheses = _count_chars(args2[3], '(');
     int closing_parentheses = _count_chars(args2[3], ')');
     if ((open_parentheses != closing_parentheses) || (open_parentheses > 1)) return false;
-    int params_quantity = 1;
+    int params_quantity = 0;
     //int params_quantity = 0;
     if (open_parentheses == 1) { 
         int index_open_parentheses = _get_index(args2[3], '(');
         int index_closing_parentheses = _get_index(args2[3], ')');
         int commas = _count_chars(args2[3], ',');
         if ( (index_closing_parentheses - index_open_parentheses)
-             > 1) params_quantity = commas + 1 + params_quantity;
+             > 1) params_quantity = commas + 1;
     }
     char **method_params = NULL;
-    if (params_quantity - 1  >= 1) { 
-        char **method_params1 = _split2(args2[3], '(');
-        printf("@@@@@@@@@@SPLIT (@@@@@@@@@@@@%d\n", params_quantity);
-        char **method_params2 = _split2(method_params1[1], ')');
-        printf("Actual: %s\n", method_params2[0]);
+    char **method_params1 = NULL;
+    char **method_params2 = NULL;
+    if (params_quantity >= 1) { 
+
+        method_params1 = _split2(args2[3], '(');
+        free(args2[3]);
+        args2[3] = method_params1[0];
+        method_params1[0] = malloc((sizeof(char))); //Puntero dummy
+        method_params2 = _split2(method_params1[1], ')');
         method_params = _split2(method_params2[0], ',');
-        for (int k = 0; k < params_quantity - 1; k++) {
-            printf("PARAMETROOOOO: %s\n", method_params[k]);
-        }
-
-    
-        free_strv(method_params1);
-        free_strv(method_params2);
-        free_strv(method_params);
     }
 
-    char *method[params_quantity];
-
-    if (!_split(args2[3], method, params_quantity, "(", ",", ")"));
-
-    if (params_quantity > 1) {
-        _calculate_body_length(self, method, params_quantity);
-        _make_body(self, method, params_quantity);
+    if (params_quantity > 0) {
+        _calculate_body_length(self, method_params, params_quantity);
+        _make_body(self, method_params, params_quantity);
     }
 
-    else if (strcmp(&method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1],
-            "\n") == 0) { 
-        //Elimino el caracter de newline del ultimo parametro
-        method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1] = '\0'; 
-    }
-    for (int u = 0; u < params_quantity; u++) {
-        printf("Param[%d] = %s\n",u ,method[u]);
-    }
-    _calculate_header_size(self, args2, 4, params_quantity - 1);
-    _create_header(self, args2, 4, params_quantity - 1);
+    _calculate_header_size(self, args2, 4, params_quantity);
+    _create_header(self, args2, 4, params_quantity);
     free_strv(args2);
+
+    if (method_params1 != NULL) free_strv(method_params1);
+    if (method_params2 != NULL) free_strv(method_params2);
     if (method_params != NULL) free_strv(method_params);
     return true;
 }
