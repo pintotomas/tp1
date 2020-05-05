@@ -22,7 +22,7 @@ bool protocol_server_accept(protocol_t *self);
 
 // Se envia el mensaje message de cliente al server
 // Se devuelve la cantidad de bytes enviados
-ssize_t protocol_client_send(protocol_t *self, char *buffer);
+ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje);
 
 // Se recibe un mensaje del server al cliente
 // Se devuelve la cantidad de bytes recibidos

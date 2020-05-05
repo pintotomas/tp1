@@ -38,6 +38,7 @@ bool client_init(client_t *self, char *host, char *port, char *filename) {
 
 void client_run(client_t *self) {
 	char *buffer = {0};
+    int id_mensaje = 24;
     while (true) {
         /* TO DO: Buffer deberia ser dinamico ya que al leer lineas nunca sabemos hasta donde lleguen */
         /*MALLOC Y REALLOC*/
@@ -50,8 +51,9 @@ void client_run(client_t *self) {
         printf("\nNEW LINE: %s\n", buffer);
         
         /* TO DO: Antes de enviar, procesar lo recibido y armar la cadena correspondiente segun al enunciado */
-        ssize_t send = protocol_client_send(self->protocol, buffer);
-        printf("SENTD %ld BYTES\n", send);
+        ssize_t send = protocol_client_send(self->protocol, buffer, id_mensaje);
+        id_mensaje++;
+        // printf("SENTD %ld BYTES\n", send);
         if (send == -1) { 
             free(buffer);
             break;

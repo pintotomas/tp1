@@ -47,12 +47,12 @@ bool protocol_server_accept(protocol_t *self){
     return true;
 }
 
-ssize_t protocol_client_send(protocol_t *self, char *buffer) {
+ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje) {
 
     //char *msg = "Hola\n";
     //int body_length;
     dbus_encoder_t *dbus_encoder = malloc(sizeof(dbus_encoder_t));
-    dbus_encoder_init(dbus_encoder, buffer);
+    dbus_encoder_init(dbus_encoder, buffer, id_mensaje);
     //unsigned char* body = create_send_message(buffer, &body_length);
     dbus_encoder_create_send_message(dbus_encoder);
     // //printf("*************AT PROTOCOL********************\n");
@@ -102,6 +102,7 @@ ssize_t protocol_server_receive(protocol_t *self) {
     printf("Destino: %s\n", message->destino); 
     printf("Metodo: %s\n", message->metodo); 
     printf("Interfaz: %s\n", message->interfaz); 
+    printf("Id mensaje: %d\n", message->id_mensaje);
     printf("@@@PARAMETROS@@@: \n");
     for (int u = 0; u < message->cantidad_parametros; u++) {
         printf("Param[%d]: %s\n", u, message->parametros[u]); 

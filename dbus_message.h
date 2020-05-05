@@ -19,7 +19,8 @@ typedef struct {
     char *metodo;
     char **parametros;
     int cantidad_parametros;
-    
+    int id_mensaje;
+
 } dbus_message_t;
 
 void dbus_message_init(dbus_message_t *self);

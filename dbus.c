@@ -178,8 +178,10 @@ void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int
     header_position += 4;
     memcpy(&header[header_position], &body_length32, 4);
     header_position += 4;
-    unsigned char message_id[16] = {0x02, 0x00, 0x00, 0x00};
-    memcpy(&header[header_position], &message_id, 4);
+    //unsigned char message_id[16] = {0x02, 0x00, 0x00, 0x00};
+    //memcpy(&header[header_position], &message_id, 4);
+    uint32_t id = (uint32_t) self->message_id;
+    memcpy(&header[header_position], &id, 4);
     header_position += 4;
     //Posicion del header size: 4+4+4: 12
     unsigned char dummy_header_length[16] = {0xff, 0xff, 0xff, 0xff};
@@ -274,13 +276,14 @@ void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int
 }
 
 
-void dbus_encoder_init(dbus_encoder_t *self, char *line) {
+void dbus_encoder_init(dbus_encoder_t *self, char *line, int message_id) {
 
     self->header_length = 0;
     self->body_length = 0;
     self->body = NULL;
     self->header = NULL;
     self->line_to_encode = line;
+    self->message_id = message_id;
 
 }
 
@@ -442,7 +445,7 @@ void _save_current_parameter(dbus_decoder_t *self, int offset, unsigned char typ
     }
 }
 void _dbus_decoder_decode_header(dbus_decoder_t *self) {
-    printf("@@@@@DBUS DECODER@@@@@@\n");
+    //printf("@@@@@DBUS DECODER@@@@@@\n");
 
     int offset = 0;
     while (offset < self->header_real_length - 16) {
@@ -505,8 +508,8 @@ ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *m) {
     //     //printf("Current byte: %x\n", body[j]);    
     // } 
     self->body_length = m[4] + (m[5] << 8) + (m[6] << 16) + (m[7] << 24);
+    self->decoded_message->id_mensaje = m[8] + (m[9] << 8) + (m[10] << 16) + (m[11] << 24);
     self->header_length = m[12] + (m[13] << 8) + (m[14] << 16) + (m[15] << 24);
-
     //Big endian
     //self->header_length = (m[4]  << 24) + (m[5] << 16) + (m[6] << 8) + m[7];
     //self->body_length = (m[12] << 24) + (m[13] << 16) + (m[14] << 8) + m[15];

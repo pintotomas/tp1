@@ -7,6 +7,7 @@ void dbus_message_init(dbus_message_t *self) {
     self->metodo = NULL;
     self->parametros = NULL;
     self->cantidad_parametros = 0;
+    self->id_mensaje = 0;
 
 }
 
@@ -22,5 +23,4 @@ void dbus_message_destroy(dbus_message_t *self) {
 		}
 		free(self->parametros);
 	}
-
 }
