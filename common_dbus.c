@@ -352,8 +352,11 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
         int index_open_parentheses = _get_index(args[3], '(');
         int index_closing_parentheses = _get_index(args[3], ')');
         int commas = _count_chars(args[3], ',');
-        if ( (index_closing_parentheses - index_open_parentheses)
-             > 1) params_quantity = commas + 1;
+        int distancia = index_closing_parentheses - index_open_parentheses;
+        if (distancia > 1) { params_quantity = commas + 1;
+        } else if ((index_closing_parentheses - index_open_parentheses) == 1) { 
+            args[3][strlen(args[3]) - 3] = '\0';
+        }
     }
 
     char **method_params = NULL;
