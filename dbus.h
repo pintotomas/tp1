@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include "dbus_message.h"
 
 /* line es una linea que recibe el cliente
 Devuelve la tira de bytes que debe ser enviada al servidor
@@ -24,6 +25,8 @@ typedef struct {
 	uint32_t header_length;
 	uint32_t header_real_length;
 	uint32_t body_length;
+	int method_params_q; //cantidad de params en la firma
+	dbus_message_t *decoded_message;
 } dbus_decoder_t;
 
 
@@ -31,7 +34,7 @@ typedef struct {
 //recibe un unsigned char de 16 bytes con informacion de header+body
 ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *message);
 
-void dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message);
+dbus_message_t * dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message);
 
 void dbus_decoder_init(dbus_decoder_t *self);
 

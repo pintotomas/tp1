@@ -19,7 +19,7 @@ typedef struct {
     char **parametros;
 } dbus_message_t;
 
-
+void dbus_message_init(dbus_message_t *self);
 //Devuelve la cantidad de bytes restantes a leer del header+body
 //recibe un unsigned char de 16 bytes con informacion de header+body
 void dbus_message_destroy(dbus_message_t *self);

@@ -82,6 +82,7 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
 //ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
 ssize_t protocol_server_receive(protocol_t *self) {    
     dbus_decoder_t *dbus_decoder = malloc(sizeof(dbus_decoder_t));
+    dbus_decoder_init(dbus_decoder);
     //Recibo primeros 16 bytes con descripcion del header y body
     unsigned char buffer[16];
     ssize_t received = socket_receive(self->client_socket, buffer, 16);
@@ -96,9 +97,9 @@ ssize_t protocol_server_receive(protocol_t *self) {
     //     printf("Current byte received: %x, (char): %c\n", buffer2[j], buffer2[j]);   
     //     //printf("Current byte: %x\n", body[j]);    
     // } 
-    dbus_decoder_decode(dbus_decoder, buffer2);
-
+    dbus_message_t * message = dbus_decoder_decode(dbus_decoder, buffer2);
     free(dbus_decoder);
+    free(message);
     return 0;
 }
 
