@@ -59,3 +59,13 @@ filter_options
 server
 client
 test
+archivos_entrada_628/
+calls
+client0.args
+client0.in
+free_port.sh
+run.sh
+server.args
+Makefile_client_server
+__server_stderr__
+__server_stdout__

@@ -115,7 +115,7 @@ void _create_header(dbus_encoder_t *self, char* params[],
     { 0x02, 0x01, 0x73, 0x00 },
     { 0x03, 0x01, 0x73, 0x00 }
 };
-    int last_padding;
+    int last_padding = 0;
     for (int u = 0; u < args_quantity; u++) {
         last_padding = _get_closest_multiply(strlen(params[u]) + 1, 8)
                       - strlen(params[u]);
