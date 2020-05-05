@@ -64,11 +64,9 @@ static int _bind_or_accept(struct addrinfo *result,
 int socket_connect(socket_t *self, const char *host, const char *service){
     /*Devuelve 0 en caso de exito, 1 en caso de error (Y queda en manos del usuario del
     TDA liberar a self) */
-
     struct addrinfo *result;
     result = _get_addrinfo(self, host, service, 0);
     int sfd = _bind_or_accept(result, connect);
-    printf("SFD: %d\n",sfd);
     self->fd = sfd;
     freeaddrinfo(result); 
     return 0;
@@ -124,8 +122,6 @@ ssize_t socket_send(socket_t *self, const void *message, size_t length) {
     return bytes_sent;
 }
 
-
-
 ssize_t socket_receive(socket_t *self, void *message, size_t length){
     if (length == 0) return 0;
     int remaining_bytes = length;
@@ -151,7 +147,6 @@ void socket_release(socket_t *self) {
     if (!self) return;
     if (!self->fd) return;
     if (self->fd == -1) return;
-    printf("FD: %d\n", self->fd);
     if (shutdown(self->fd, SHUT_RDWR) == -1) {
         fprintf(stderr, "destroy failed at shutdown: %s", strerror(errno));
     }

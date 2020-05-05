@@ -30,7 +30,7 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer, int bytes);
 
 dbus_message_t* protocol_server_receive(protocol_t *self);
 
-ssize_t protocol_server_send(protocol_t *self, char *buffer);
+ssize_t protocol_server_send(protocol_t *self, char *buffer, int size);
 
 void protocol_destroy(protocol_t *self);
 #endif //_PROTOCOL_H

@@ -17,7 +17,9 @@ bool input_reader_init(input_reader_t *self, char *filename) {
 void input_reader_destroy(input_reader_t *self) {
 	fclose(self->input);
 }
-
+/*
+funcion que reemplaza a getline para el standard c99
+*/
 static ssize_t _my_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream) {
     
     if (lineptr == NULL || n == NULL || stream == NULL) {
@@ -54,6 +56,7 @@ static ssize_t _my_getline(char **restrict lineptr, size_t *restrict n, FILE *re
     }
     return -1;
 }
+
 char* input_reader_get_next_line(input_reader_t *self) {
 
     char *line = {0};
@@ -65,9 +68,5 @@ char* input_reader_get_next_line(input_reader_t *self) {
         }
         return NULL;
     }
-    // for (int i = 0; i < strlen(line); i++) {
-    //     printf("%02X\n", (unsigned char)line[i]);
-    // }
-
     return line;
 }

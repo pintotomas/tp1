@@ -41,8 +41,8 @@ void server_run(server_t *self){
         dbus_message_str_representation(msg);
         dbus_message_destroy(msg);
         free(msg);  
-        char *buffer = "OK\n";
-        protocol_server_send(self->protocol, buffer);
+        char *ok = "OK\n";
+        protocol_server_send(self->protocol, ok, strlen(ok));
     }
 }
 

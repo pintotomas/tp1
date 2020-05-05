@@ -56,23 +56,22 @@ void client_run(client_t *self) {
     	buffer = input_reader_get_next_line(self->input_reader);
     	if (buffer == NULL) return;
         ssize_t send = protocol_client_send(self->protocol, buffer, id_mensaje);
-        id_mensaje++;
-        
         if (send == -1) { 
             free(buffer);
             break;
         }
         else if (send == 0) continue;
-        char response[3] = {0};
+        char response[4] = {0};
         ssize_t rcvd_bytes = protocol_client_receive(self->protocol, response, 3);
         if (rcvd_bytes <= 0) {
             fprintf(stderr, "Server closed/down\n");
         }
         _print_client_response(response, id_mensaje);
+        id_mensaje++;
+
     }
 
 }
-
 
 void client_destroy(client_t *self) {
     if (!self) return;

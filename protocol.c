@@ -49,26 +49,11 @@ bool protocol_server_accept(protocol_t *self){
 
 ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje) {
 
-    //char *msg = "Hola\n";
-    //int body_length;
     dbus_encoder_t *dbus_encoder = malloc(sizeof(dbus_encoder_t));
     dbus_encoder_init(dbus_encoder, buffer, id_mensaje);
-    //unsigned char* body = create_send_message(buffer, &body_length);
     dbus_encoder_create_send_message(dbus_encoder);
-    // //printf("*************AT PROTOCOL********************\n");
-    printf("Header total size: %d\n", dbus_encoder->header_length);
-    // printf("@@@@@@@Sending 10 bytes@@@@@@\n");
-    // // for (int j = 0; j < body_length; j++) {
-    // //     printf("Current byte: %x\n", body[j]);   
-    // //     //printf("Current byte: %x\n", body[j]);    
-    // // } 
-    // for (int j = 0; j < dbus_encoder->body_length; j++) {
-    //     printf("Current byte: %x\n", dbus_encoder->body[j]);  
-    // } 
     ssize_t bytes_sent = socket_send(self->server_socket, dbus_encoder->header, dbus_encoder->header_length);
-    bytes_sent = socket_send(self->server_socket, dbus_encoder->body, dbus_encoder->body_length);
-
-    //free(body);
+    bytes_sent += socket_send(self->server_socket, dbus_encoder->body, dbus_encoder->body_length);
     dbus_encoder_destroy(dbus_encoder);
     free(dbus_encoder);
     return bytes_sent;
@@ -79,7 +64,6 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer, int bytes) {
     return socket_receive(self->server_socket, buffer, bytes);
 }
 
-//ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
 dbus_message_t* protocol_server_receive(protocol_t *self) {    
     dbus_decoder_t *dbus_decoder = malloc(sizeof(dbus_decoder_t));
     dbus_decoder_init(dbus_decoder);
@@ -93,48 +77,25 @@ dbus_message_t* protocol_server_receive(protocol_t *self) {
     }
     ssize_t remaining_bytes = dbus_decoder_set_descriptions(dbus_decoder, buffer);
     unsigned char buffer2[remaining_bytes];
-    //printf("Waiting to receive: %ld bytes\n", remaining_bytes);
     received = socket_receive(self->client_socket, buffer2, remaining_bytes);
     if (received <= 0) {
         free(dbus_decoder->decoded_message);
         free(dbus_decoder);
         return NULL;
     }
-    //printf("Received: %ld bytes\n", received);
-
-    // for (int j = 0; j < remaining_bytes; j++) {
-    //     printf("Current byte received: %x, (char): %c\n", buffer2[j], buffer2[j]);   
-    //     //printf("Current byte: %x\n", body[j]);    
-    // } 
     dbus_message_t * message = dbus_decoder_decode(dbus_decoder, buffer2);
-    // printf("Ruta: %s\n", message->ruta); 
-    // printf("Destino: %s\n", message->destino); 
-    // printf("Metodo: %s\n", message->metodo); 
-    // printf("Interfaz: %s\n", message->interfaz); 
-    // printf("Id mensaje: %d\n", message->id_mensaje);
-    // printf("@@@PARAMETROS@@@: \n");
-    // for (int u = 0; u < message->cantidad_parametros; u++) {
-    //     printf("Param[%d]: %s\n", u, message->parametros[u]); 
-    // }
     free(dbus_decoder);
-    //Esto lo deberia hacer el server despues
-    // dbus_message_destroy(message);
-    // free(message);
     return message;
 }
 
-ssize_t protocol_server_send(protocol_t *self, char *buffer) {
-    //char *msg = "Mundo\n";
-    return socket_send(self->client_socket, buffer, 5);
+ssize_t protocol_server_send(protocol_t *self, char *buffer, int size) {
+    return socket_send(self->client_socket, buffer, size);
 }
 
 void protocol_destroy(protocol_t *self) {
     if (!self) return;
-    printf("self->server_socket->fd = %d\n", self->server_socket->fd);
     socket_release(self->server_socket);
     free(self->server_socket);
-    printf("self->client_socket->fd = %d\n", self->client_socket->fd);
     socket_release(self->client_socket);
     free(self->client_socket);
-
 }

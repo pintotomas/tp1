@@ -49,6 +49,4 @@ void dbus_encoder_init(dbus_encoder_t *self, char *line, int message_id);
 
 void dbus_encoder_destroy(dbus_encoder_t *self);
 
-
-
 #endif
