@@ -8,11 +8,9 @@ void dbus_message_init(dbus_message_t *self) {
     self->parametros = NULL;
     self->cantidad_parametros = 0;
     self->id_mensaje = 0;
-
 }
 
 void dbus_message_destroy(dbus_message_t *self) {
-
 	if (self->ruta) free(self->ruta);
 	if (self->destino) free(self->destino);
 	if (self->interfaz) free(self->interfaz);
@@ -22,7 +20,7 @@ void dbus_message_destroy(dbus_message_t *self) {
 			free(self->parametros[i]);
 		}
 		free(self->parametros);
-	}
+	} 
 }
 
 void dbus_message_str_representation(dbus_message_t *self) {

@@ -11,10 +11,12 @@ typedef struct {
 } input_reader_t;
 
 // Returns false if anything fails at init
-// Opens FILE filename to read from it, or uses STDIN if filename is NULL
+// Opens FILE filename to read from it,
+// or uses STDIN if filename is NULL
 bool input_reader_init(input_reader_t *self, char *filename);
 
-// Returns a char* malloc'd that user should free, or NULL if there are no new lines
+// Returns a char* malloc'd that user should free,
+// or NULL if there are no new lines
 char* input_reader_get_next_line(input_reader_t *self);
 
 //Close input stream

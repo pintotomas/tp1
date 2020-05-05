@@ -5,9 +5,12 @@
 #include <sys/types.h>
 
 bool input_reader_init(input_reader_t *self, char *filename) {
-	if (filename != NULL) self->input = fopen(filename, "rb"); 
-    else self->input = stdin;	
-    if(self->input != NULL) {
+	if (filename != NULL) {
+        self->input = fopen(filename, "rb"); 
+    } else {
+        self->input = stdin;
+    }
+    if (self->input != NULL) {
     	return true;
     }
     fprintf(stderr, "fopen: %s\n", strerror(errno));
@@ -20,10 +23,10 @@ void input_reader_destroy(input_reader_t *self) {
 /*
 funcion que reemplaza a getline para el standard c99
 */
-static ssize_t _my_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream) {
-    
+static ssize_t _my_getline(char **restrict lineptr,
+       size_t *restrict n, FILE *restrict stream) {
     if (lineptr == NULL || n == NULL || stream == NULL) {
-        fprintf(stderr, "_my_getline, Argumentos incorrectos (Null pointers).\n");
+        fprintf(stderr, "_my_getline, args: null pointers.\n");
         return -1;
     }
 
@@ -33,7 +36,7 @@ static ssize_t _my_getline(char **restrict lineptr, size_t *restrict n, FILE *re
     if (*lineptr == NULL) {
         *n = sizeof(chunk);
         if ((*lineptr = malloc(*n)) == NULL) {
-            fprintf(stderr, "No se pudo alocar memoria para la linea.\n");
+            fprintf(stderr, "malloc error.\n");
             return -1;
         }
     }
@@ -42,14 +45,13 @@ static ssize_t _my_getline(char **restrict lineptr, size_t *restrict n, FILE *re
         if (*n - strlen(*lineptr) < sizeof(chunk)) {
             *n *= 2; //resize factor
             if ((*lineptr = realloc(*lineptr, *n)) == NULL) {
-                fprintf(stderr, "No se pudo reaalocar memoria para la linea.\n");
+                fprintf(stderr, "realloc error.\n");
                 free(lineptr);
                 return -1;
             }
         }
 
-        strcat(*lineptr, chunk);
-
+        strncat(*lineptr, chunk, sizeof(chunk));
         if ((*lineptr)[strlen(*lineptr) - 1] == '\n') {
             return strlen(*lineptr);
         }
@@ -58,7 +60,6 @@ static ssize_t _my_getline(char **restrict lineptr, size_t *restrict n, FILE *re
 }
 
 char* input_reader_get_next_line(input_reader_t *self) {
-
     char *line = {0};
     size_t len = 0;
     int next_line_result = _my_getline(&line, &len, self->input);
