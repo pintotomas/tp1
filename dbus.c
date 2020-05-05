@@ -7,8 +7,9 @@
    Se utiliza por primera vez el delimitador delim1, y luego delim2 hasta finalizar el recorrido del string.
    si se pasa por parametro delim3, se aplicara antes de iniciar los demas splits
  */
-bool _split(char *line, char* strings[], size_t size, char *delim1, char *delim2, char *delim3) {
-    
+
+bool _split(char *line, char* strings[], size_t size,
+     char *delim1, char *delim2, char *delim3) {
     char *token = line;
     if (delim3 != NULL) {
         token = strtok(line, delim3);
@@ -54,7 +55,6 @@ void _calculate_body_length(dbus_encoder_t *self, char* strings[], int params_qu
 }   
 
 void _make_body(dbus_encoder_t *self, char* strings[], int params_quantity) {
-
     unsigned char body[self->body_length];
     int body_position = 0;
     for (int k= 1; k < params_quantity; k++) {
@@ -112,7 +112,6 @@ void _calculate_header_size(dbus_encoder_t *self, char* params[], int args_quant
 params debe estar en el orden <destino> <path> <interfaz> <metodo>
 */
 void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int params_q) {
-
     unsigned char header[self->header_length];
     uint32_t body_length32 = ((uint32_t) self->body_length);
     unsigned char h1[16] = {0x6c, 0x01, 0x00, 0x01};
@@ -170,9 +169,7 @@ void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int
             memcpy(&header[header_position], "\0", 1);
             header_position++;
         }
-
     }
-
     uint32_t real_header_length = self->header_length;
     if (last_padding > 1) {
         real_header_length -= last_padding;
@@ -186,22 +183,18 @@ void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int
 
 
 void dbus_encoder_init(dbus_encoder_t *self, char *line, int message_id) {
-
     self->header_length = 0;
     self->body_length = 0;
     self->body = NULL;
     self->header = NULL;
     self->line_to_encode = line;
     self->message_id = message_id;
-
 }
 
 void dbus_encoder_destroy (dbus_encoder_t *self) {
     if (self->body != NULL) free(self->body);
     if (self->header != NULL) free(self->header);
 } 
-
-
 //Devuelve el indice de la primer ocurrencia de c en el *string. 
 //Devuelve -1 si no se encontro
 static int _get_index(char* string, char c) {
@@ -212,23 +205,92 @@ static int _get_index(char* string, char c) {
     return (int)(e - string);
 }
 
+
+/* libera un array de strings */
+static void free_strv(char *strv[]){
+    size_t cad_actual = 0;
+    while (strv[cad_actual]){
+        free(strv[cad_actual]);
+        cad_actual++;
+        }
+    free(strv);
+    }
+
+/*
+Devuelve laa cantidad de separadores 'separador' en str
+Guarda la longitud de la mayor cadena encontrada en mayor_longitud
+*/
+static size_t _contar_separadores (const char *str, char separador, size_t* mayor_longitud){
+    size_t k;
+    size_t cantidad = 0;
+    size_t longitud_str = strlen(str);
+    size_t max_largo = 0;
+    size_t max_actual = 0;
+    for(k = 0; k < longitud_str; k++){
+        if (str[k] == separador){
+            cantidad++;
+            if (max_actual > max_largo){
+                max_largo = max_actual;
+                max_actual = 0;
+                }
+            continue;
+            }
+        max_actual++;
+        }
+    if (max_actual > max_largo){
+        max_largo = max_actual;
+        }   
+    if (mayor_longitud){
+        *mayor_longitud = max_largo;
+        }
+    return cantidad;
+    }
+
+static char **_split2(const char *str, char sep){
+    size_t* longitud_subcadenas = malloc(sizeof(size_t));
+    size_t cantidad_separadores = _contar_separadores(str,sep,longitud_subcadenas);
+    size_t len_str = strlen(str);
+    size_t j;
+    char** cadena_separada = NULL;
+    cadena_separada = malloc((cantidad_separadores+2)*(sizeof(char*)));
+    for (j = 0; j <= cantidad_separadores; j++){
+        cadena_separada[j] = malloc(((*longitud_subcadenas)+1)*(sizeof(char)));
+        }
+    size_t letra_str;
+    size_t palabra_actual = 0;
+    size_t letra_palabra_actual = 0;
+    for (letra_str = 0; letra_str < len_str; letra_str++){
+        if (str[letra_str] == sep){
+            cadena_separada[palabra_actual][letra_palabra_actual] = '\0';
+            palabra_actual++;
+            letra_palabra_actual = 0;
+            continue;
+            }
+        cadena_separada[palabra_actual][letra_palabra_actual] = str[letra_str];     
+        letra_palabra_actual++;
+        }
+    cadena_separada[palabra_actual][letra_palabra_actual] = '\0';
+    cadena_separada[cantidad_separadores+1] = NULL;
+    free(longitud_subcadenas);  
+    return cadena_separada; 
+    }
+
 bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
     //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..))
-    char *args[4] = {0}; 
-    if (!_split(self->line_to_encode, args, 4, " ", " ", NULL)) return false;
-    int open_parentheses = _count_chars(args[3], '(');
-    int closing_parentheses = _count_chars(args[3], ')');
+    char **args2 = _split2(self->line_to_encode, ' ');
+    int open_parentheses = _count_chars(args2[3], '(');
+    int closing_parentheses = _count_chars(args2[3], ')');
     if ((open_parentheses != closing_parentheses) || (open_parentheses > 1)) return false;
     int params_quantity = 1;
     if (open_parentheses == 1) { 
-        int index_open_parentheses = _get_index(args[3], '(');
-        int index_closing_parentheses = _get_index(args[3], ')');
-        int commas = _count_chars(args[3], ',');
+        int index_open_parentheses = _get_index(args2[3], '(');
+        int index_closing_parentheses = _get_index(args2[3], ')');
+        int commas = _count_chars(args2[3], ',');
         if ( (index_closing_parentheses - index_open_parentheses)
              > 1) params_quantity = commas + 1 + params_quantity;
     }
     char *method[params_quantity];
-    if (!_split(args[3], method, params_quantity, "(", ",", ")"));
+    if (!_split(args2[3], method, params_quantity, "(", ",", ")"));
 
     if (params_quantity > 1) {
         _calculate_body_length(self, method, params_quantity);
@@ -239,8 +301,9 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
         //Elimino el caracter de newline del ultimo parametro
         method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1] = '\0'; 
     }
-    _calculate_header_size(self, args, 4, params_quantity - 1);
-    _create_header(self, args, 4, params_quantity - 1);
+    _calculate_header_size(self, args2, 4, params_quantity - 1);
+    _create_header(self, args2, 4, params_quantity - 1);
+    free_strv(args2);
     return true;
 }
 
@@ -267,7 +330,6 @@ int _get_current_param_length(dbus_decoder_t *self, int offset, unsigned char pa
         l = self->encoded_message[offset];
     }
     return l;
-
 }
 
 //Offset es la posicion actual del primer byte descriptivo
