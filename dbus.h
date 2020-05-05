@@ -34,6 +34,9 @@ typedef struct {
 //recibe un unsigned char de 16 bytes con informacion de header+body
 ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *message);
 
+//Decodifica el mensaje binario siguiendo el protocolo dbus
+//Devuelve un struct dbus_message_t que el usuario debe destruir 
+//Luego de utilizarlo
 dbus_message_t * dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message);
 
 void dbus_decoder_init(dbus_decoder_t *self);

@@ -289,6 +289,17 @@ void dbus_encoder_destroy (dbus_encoder_t *self) {
     if (self->header != NULL) free(self->header);
 } 
 
+
+//Devuelve el indice de la primer ocurrencia de c en el *string. 
+//Devuelve -1 si no se encontro
+static int _get_index(char* string, char c) {
+    char *e = strchr(string, c);
+    if (e == NULL) {
+        return -1;
+    }
+    return (int)(e - string);
+}
+
 bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
 
     //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..))
@@ -301,7 +312,16 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
     int closing_parentheses = _count_chars(args[3], ')');
     if ((open_parentheses != closing_parentheses) || (open_parentheses > 1)) return false;
     int params_quantity = 1;
-    if (open_parentheses == 1) params_quantity = _count_chars(args[3], ',') + 1 + params_quantity;
+    if (open_parentheses == 1) { 
+        int index_open_parentheses = _get_index(args[3], '(');
+        int index_closing_parentheses = _get_index(args[3], ')');
+        int commas = _count_chars(args[3], ',');
+        // if (commas == 0) args[strlen(args[3]) - 1] = '\0';
+        // else params_quantity = commas + 1 + params_quantity;
+        if ( (index_closing_parentheses - index_open_parentheses)
+             > 1) params_quantity = commas + 1 + params_quantity;
+    }
+    printf("@@@@@@@@@PARAMS QUANTITY@@@@@@@@@@@@@@@@: %d\n", params_quantity);
     char *method[params_quantity];
     if (!_split(args[3], method, params_quantity, "(", ",", ")"));
 
@@ -321,7 +341,9 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
         //     //printf("Current byte: %x\n", body[j]);    
         // } 
     }
-    else {     //Elimino el caracter de newline del ultimo parametro
+    else if (strcmp(&method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1],
+            "\n") == 0) { 
+        //Elimino el caracter de newline del ultimo parametro
         method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1] = '\0'; 
     }
     //*body_length = body_length_calc;
@@ -357,20 +379,20 @@ void dbus_decoder_init(dbus_decoder_t *self) {
     self->header_length = 0;
     self->body_length = 0;
     self->header_real_length = 0;
-
+    self->method_params_q = 0;
 }
 
-//Offset es un int que apunta al principio de los 8 bytes descriptivos.
+//Offset es un int que apunta al primer byte de los 4 del entero.
 int _get_current_param_length(dbus_decoder_t *self, int offset, unsigned char param_type) {
     int l;
     if (param_type != 0x09) {
-        l = self->encoded_message[offset + 4] +
-           (self->encoded_message[offset + 5] << 8) +
-           (self->encoded_message[offset + 6] << 16) +
-           (self->encoded_message[offset + 7] << 24);
+        l = self->encoded_message[offset] +
+           (self->encoded_message[offset + 1] << 8) +
+           (self->encoded_message[offset + 2] << 16) +
+           (self->encoded_message[offset + 3] << 24);
     }
     else {
-        l = self->encoded_message[offset + 4];
+        l = self->encoded_message[offset];
     }
     return l;
 
@@ -402,29 +424,21 @@ void _save_current_parameter(dbus_decoder_t *self, int offset, unsigned char typ
         //Ruta
         self->decoded_message->ruta = malloc(sizeof(char) * (l + 1)); 
         memcpy(self->decoded_message->ruta, &self->encoded_message[description_offset], l + 1);
-        printf("Ruta: %s\n", self->decoded_message->ruta); 
-        free(self->decoded_message->ruta);
     }
     else if (type == 0x06) {
         //destino
         self->decoded_message->destino = malloc(sizeof(char) * (l + 1)); 
         memcpy(self->decoded_message->destino, &self->encoded_message[description_offset], l + 1);
-        printf("dest: %s\n", self->decoded_message->destino); 
-        free(self->decoded_message->destino);
     }
     else if (type == 0x02) {
         //interfaz
         self->decoded_message->interfaz = malloc(sizeof(char) * (l + 1)); 
         memcpy(self->decoded_message->interfaz, &self->encoded_message[description_offset], l + 1);
-        printf("interfaz: %s\n", self->decoded_message->interfaz); 
-        free(self->decoded_message->interfaz);
     }
     else if (type == 0x03) {
         //metodo
         self->decoded_message->metodo = malloc(sizeof(char) * (l + 1)); 
         memcpy(self->decoded_message->metodo, &self->encoded_message[description_offset], l + 1);
-        printf("metodo: %s\n", self->decoded_message->metodo); 
-        free(self->decoded_message->metodo);
     }
 }
 void _dbus_decoder_decode_header(dbus_decoder_t *self) {
@@ -434,19 +448,45 @@ void _dbus_decoder_decode_header(dbus_decoder_t *self) {
     while (offset < self->header_real_length - 16) {
         //printf("Current offset: %d\n", offset);
         unsigned char byte_type = self->encoded_message[offset];
-        uint32_t current_length = _get_current_param_length(self, offset, byte_type);
+        uint32_t current_length = _get_current_param_length(self, offset + 4, byte_type);
         _save_current_parameter(self, offset, byte_type, current_length);
         offset = _get_next_offset(offset, current_length);
         //printf("Current byte: %x\n", byte_type);
         //printf("Current length: %d\n", current_length);
     }
 }
+// Guarda los parametros del body, en orden, en self->decoded_message->parametros
+void _dbus_decoder_decode_body(dbus_decoder_t *self) {
+  
+    int body_offset = self->header_real_length - 16;
+    int body_end = self->header_real_length + self->body_length - 16;
+    self->decoded_message->parametros = malloc(sizeof(char*) * self->method_params_q);
+    self->decoded_message->cantidad_parametros = self->method_params_q;
+    int current_param = 0;
+    while (body_offset < body_end) {
+        uint32_t l = _get_current_param_length(self, body_offset, 0x73);
+        self->decoded_message->parametros[current_param] = malloc(sizeof(char) * (l + 1));
+        int description = body_offset + 4; //Offset al primer byte descriptivo
+        memcpy(self->decoded_message->parametros[current_param], &self->encoded_message[description], l + 1);
+        //Incremento uno por \0 y 4 por bytes de enteros
+        body_offset += l + 5;
+        current_param++;
+    } 
+
+    for (int j = self->header_real_length - 16; j < (self->header_real_length + self->body_length - 16); j++) {
+        //printf("%c", message[j]);   
+        printf("byte %d: %x (char: %c)\n",j ,self->encoded_message[j], self->encoded_message[j]);    
+    } 
+}
 
 dbus_message_t* dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message) {
 
     self->encoded_message = message;
     _dbus_decoder_decode_header(self);
-    printf("Cadena recibida:\n");
+    if (self->method_params_q > 0) {
+       printf("@@@@@@@@@@@@@HAY PARAMETROS@@@@@@@@@@@@@@@@@:\n");
+       _dbus_decoder_decode_body(self);
+    }
     // for (int j = 0; j < self->header_real_length + self->body_length - 16; j++) {
     //     //printf("%c", message[j]);   
     //     printf("byte %d: %x (char: %c)\n",j ,message[j], message[j]);    

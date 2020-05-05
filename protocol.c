@@ -86,7 +86,7 @@ ssize_t protocol_server_receive(protocol_t *self) {
     //Recibo primeros 16 bytes con descripcion del header y body
     unsigned char buffer[16];
     ssize_t received = socket_receive(self->client_socket, buffer, 16);
-    
+
     ssize_t remaining_bytes = dbus_decoder_set_descriptions(dbus_decoder, buffer);
     unsigned char buffer2[remaining_bytes];
     printf("Waiting to receive: %ld bytes\n", remaining_bytes);
@@ -98,7 +98,17 @@ ssize_t protocol_server_receive(protocol_t *self) {
     //     //printf("Current byte: %x\n", body[j]);    
     // } 
     dbus_message_t * message = dbus_decoder_decode(dbus_decoder, buffer2);
+    printf("Ruta: %s\n", message->ruta); 
+    printf("Destino: %s\n", message->destino); 
+    printf("Metodo: %s\n", message->metodo); 
+    printf("Interfaz: %s\n", message->interfaz); 
+    printf("@@@PARAMETROS@@@: \n");
+    for (int u = 0; u < message->cantidad_parametros; u++) {
+        printf("Param[%d]: %s\n", u, message->parametros[u]); 
+    }
     free(dbus_decoder);
+    //Esto lo deberia hacer el server despues
+    dbus_message_destroy(message);
     free(message);
     return 0;
 }
