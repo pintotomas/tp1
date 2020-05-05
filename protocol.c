@@ -57,14 +57,14 @@ ssize_t protocol_client_send(protocol_t *self, char *buffer) {
     dbus_encoder_create_send_message(dbus_encoder);
     // //printf("*************AT PROTOCOL********************\n");
     printf("Header total size: %d\n", dbus_encoder->header_length);
-    printf("@@@@@@@Sending 10 bytes@@@@@@\n");
-    // for (int j = 0; j < body_length; j++) {
-    //     printf("Current byte: %x\n", body[j]);   
-    //     //printf("Current byte: %x\n", body[j]);    
+    // printf("@@@@@@@Sending 10 bytes@@@@@@\n");
+    // // for (int j = 0; j < body_length; j++) {
+    // //     printf("Current byte: %x\n", body[j]);   
+    // //     //printf("Current byte: %x\n", body[j]);    
+    // // } 
+    // for (int j = 0; j < dbus_encoder->body_length; j++) {
+    //     printf("Current byte: %x\n", dbus_encoder->body[j]);  
     // } 
-    for (int j = 0; j < dbus_encoder->body_length; j++) {
-        printf("Current byte: %x\n", dbus_encoder->body[j]);  
-    } 
     ssize_t bytes_sent = socket_send(self->server_socket, dbus_encoder->header, dbus_encoder->header_length);
     bytes_sent = socket_send(self->server_socket, dbus_encoder->body, dbus_encoder->body_length);
 

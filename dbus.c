@@ -124,16 +124,25 @@ void _calculate_header_size(dbus_encoder_t *self, char* params[], int args_quant
     //16 bytes fijos 
     int header_size = 16; 
     for (int i = 0; i < args_quantity; i++) {
+        printf("Now adding header size for: %s with length: %ld\n", params[i], strlen(params[i]));
         //4 bytes para la descripcion del parametro + 
         //4 bytes para la longitud del parametro
         header_size += 8; 
-        //longitud de la descripcion del param + \0
+        //longitud de la descripcion del param + 1 por /0
         int z = strlen(params[i]) + 1;
+        if (z == 8) {
+            for (int k = 0; k < z; k++ ) {
+                printf("Curr char: %c and in hex:%x\n", params[i][k], params[i][k]);
+            }
+        }
         //Alineo a 8 bytes
+        printf("Length of this param is: %d\n", z);
         int x = _get_closest_multiply(z, 8);
+        printf("closest multiply of 8 is: %d\n", x);
         header_size += x;
+        printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", header_size);
 
-        // printf("Closest multiple of 8: %d\n", x);
+        //printf("Closest multiple of 8: %d\n", x);
     }
     if (params_quantity > 0) {
         printf("PARAMS QUANTITY: %d\n", params_quantity);
@@ -149,7 +158,6 @@ void _calculate_header_size(dbus_encoder_t *self, char* params[], int args_quant
         header_size += _get_closest_multiply(bytes_firma, 8);
     }
     self->header_length = header_size;
-    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", self->header_length);
     //return header_size;
 }
 
@@ -233,12 +241,12 @@ void _create_header(dbus_encoder_t *self, char* params[], int args_quantity, int
     //Reemplazo por tamaño del header sin tener en cuenta ultimo padding
     memcpy(&header[12], &real_header_length, 4);
 
-    for (int j = 0; j < header_position; j++) {
-        printf("Current byte: %x (char: %c)\n", header[j], header[j]);
+    // for (int j = 0; j < header_position; j++) {
+    //     printf("Current byte: %x (char: %c)\n", header[j], header[j]);
 
-        //printf("Current byte: %x\n", body[j]);    
-    }
-    printf("@@@@@@@@@@@LAST PADDING·@@@@@@@@@@: %d\n", last_padding);
+    //     //printf("Current byte: %x\n", body[j]);    
+    // }
+    // printf("@@@@@@@@@@@LAST PADDING·@@@@@@@@@@: %d\n", last_padding);
 
     //s_ptr = malloc(sizeof(unsigned char) * self->header_length);
     self->header = malloc(sizeof(unsigned char) * self->header_length);
@@ -296,7 +304,9 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
     if (open_parentheses == 1) params_quantity = _count_chars(args[3], ',') + 1 + params_quantity;
     char *method[params_quantity];
     if (!_split(args[3], method, params_quantity, "(", ",", ")"));
+
     if (params_quantity > 1) {
+        // printf("@@@@@@@@@@@@@@@@@@@params_quantity is: %d@@@@@@@@@@@@@", params_quantity);
         //body_length_calc = _calculate_body_length(method, params_quantity);
         //self->body_length = _calculate_body_length(self, method, params_quantity);
         _calculate_body_length(self, method, params_quantity);
@@ -305,16 +315,21 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
         //self->body = _make_body(self, method, params_quantity, self->body_length);
         //self->body = _make_body(self, method, params_quantity);
         _make_body(self, method, params_quantity);
-
-
+        // printf("@@@@@@@@@@printing body@@@@@@@@@@@@");
+        // for (int j = 0; j < self->body_length; j++) {
+        //     printf("Current byte: %x\n", self->body[j]);   
+        //     //printf("Current byte: %x\n", body[j]);    
+        // } 
     }
-
+    else {     //Elimino el caracter de newline del ultimo parametro
+        method[params_quantity - 1][strlen(method[params_quantity - 1]) - 1] = '\0'; 
+    }
     //*body_length = body_length_calc;
     //int header_size = _calculate_header_size(args, 4, params_quantity - 1);
     //self->header_length = _calculate_header_size(args, 4, params_quantity - 1);
     _calculate_header_size(self, args, 4, params_quantity - 1);
 
-    printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", self->header_length);
+    // printf("@@@@@@@@@@@Header size@@@@@@@@@@@: %d\n", self->header_length);
     //_create_header(args, 4, header_size, body_length_calc, params_quantity - 1);
     //self->header = _create_header(args, 4, self->header_length, self->body_length, params_quantity - 1);
     //_create_header(self, args, 4, self->header_length, self->body_length, params_quantity - 1);
@@ -338,16 +353,23 @@ void dbus_decoder_init(dbus_decoder_t *self) {
     self->encoded_message = NULL;
     self->header_length = 0;
     self->body_length = 0;
+    self->header_real_length = 0;
+}
+
+void _dbus_decoder_decode_header(dbus_decoder_t *self) {
+
 }
 
 void dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message) {
-    printf("@@@@@@@Received 120 bytes@@@@@@\n");
 
     self->encoded_message = message;
-    for (int j = 0; j < self->header_length + self->body_length - 16; j++) {
-        printf("Current byte: %x, (Char: %c) \n", message[j], message[j]);   
-        //printf("Current byte: %x\n", body[j]);    
+    _dbus_decoder_decode_header(self);
+    printf("Cadena recibida:\n");
+    for (int j = 0; j < self->header_real_length + self->body_length - 16; j++) {
+        printf("%c", message[j]);   
+        //printf("Current byte: %c\n", message[j]);    
     } 
+    printf("\n");
     return;
 }
 
@@ -366,8 +388,12 @@ ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *m) {
     //Big endian
     //self->header_length = (m[4]  << 24) + (m[5] << 16) + (m[6] << 8) + m[7];
     //self->body_length = (m[12] << 24) + (m[13] << 16) + (m[14] << 8) + m[15];
-    ssize_t remaining_bytes = _get_closest_multiply(self->header_length 
-        - 16 + self->body_length, 8);
+    ssize_t header_real_bytes = _get_closest_multiply(self->header_length, 8);
+    self->header_real_length = header_real_bytes;
+    ssize_t remaining_bytes = header_real_bytes - 16 + self->body_length;
+    //ssize_t remaining_bytes = _get_closest_multiply(self->header_length 
+    //    - 15 + self->body_length, 8);
+
     //printf("header len: %d\n", self->header_length);   
     // printf("body len: %d\n", self->body_length);   
     //printf("remaining byetes: %ld\n", remaining_bytes);   

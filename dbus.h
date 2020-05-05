@@ -22,6 +22,7 @@ typedef struct {
 typedef struct {
 	unsigned char *encoded_message; //Contiene header+body
 	uint32_t header_length;
+	uint32_t header_real_length;
 	uint32_t body_length;
 } dbus_decoder_t;
 
