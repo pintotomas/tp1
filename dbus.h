@@ -2,6 +2,9 @@
 #define _DBUS_H
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
+#include <sys/types.h>
+
 /* line es una linea que recibe el cliente
 Devuelve la tira de bytes que debe ser enviada al servidor
 para que lo procese 
@@ -16,6 +19,21 @@ typedef struct {
     int body_length;
 } dbus_encoder_t;
 
+typedef struct {
+	unsigned char *encoded_body;
+	unsigned char *encoded_header;
+	uint32_t header_length;
+	uint32_t body_length;
+} dbus_decoder_t;
+
+
+//Devuelve la cantidad de bytes restantes a leer del header+body
+//recibe un unsigned char de 16 bytes con informacion de header+body
+ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *message);
+
+void dbus_decoder_set_body_and_header(dbus_decoder_t *self, unsigned char *message);
+
+void dbus_decoder_init(dbus_decoder_t *self);
 
 bool dbus_encoder_create_send_message(dbus_encoder_t *self); 
 

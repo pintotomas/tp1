@@ -66,7 +66,7 @@ ssize_t protocol_client_send(protocol_t *self, char *buffer) {
         printf("Current byte: %x\n", dbus_encoder->body[j]);  
     } 
     ssize_t bytes_sent = socket_send(self->server_socket, dbus_encoder->header, dbus_encoder->header_length);
-
+    bytes_sent = socket_send(self->server_socket, dbus_encoder->body, dbus_encoder->body_length);
 
     //free(body);
     dbus_encoder_destroy(dbus_encoder);
@@ -79,15 +79,26 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
     return socket_receive(self->server_socket, buffer, 5);
 }
 
-ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
-    
-    ssize_t received = socket_receive(self->client_socket, buffer, 120);
-    printf("@@@@@@@Received 120 bytes@@@@@@\n");
-    for (int j = 0; j < 120; j++) {
-        printf("Current byte: %x\n", buffer[j]);   
+//ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
+ssize_t protocol_server_receive(protocol_t *self) {    
+    dbus_decoder_t *dbus_decoder = malloc(sizeof(dbus_decoder_t));
+    //Recibo primeros 16 bytes con descripcion del header y body
+    unsigned char buffer[16];
+    ssize_t received = socket_receive(self->client_socket, buffer, 16);
+    ssize_t remaining_bytes = dbus_decoder_set_descriptions(dbus_decoder, buffer);
+    unsigned char buffer2[remaining_bytes];
+    printf("Waiting to receive: %ld bytes\n", remaining_bytes);
+
+    received = socket_receive(self->client_socket, buffer2, remaining_bytes);
+    printf("Received: %ld bytes\n", received);
+
+    for (int j = 0; j < remaining_bytes; j++) {
+        printf("Current byte: %x\n", buffer2[j]);   
         //printf("Current byte: %x\n", body[j]);    
     } 
-    return received;
+
+    free(dbus_decoder);
+    return 0;
 }
 
 ssize_t protocol_server_send(protocol_t *self, char *buffer) {

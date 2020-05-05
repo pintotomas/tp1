@@ -44,6 +44,7 @@ void client_run(client_t *self) {
 
         // char buffer[MAX_INPUT_SIZE] = {0};
         // if (!fgets(buffer, MAX_INPUT_SIZE, self->input)) break;
+        if (buffer != NULL) free(buffer);
     	buffer = input_reader_get_next_line(self->input_reader);
     	if (buffer == NULL) return;
         printf("\nNEW LINE: %s\n", buffer);
@@ -56,12 +57,12 @@ void client_run(client_t *self) {
             break;
         }
         else if (send == 0) continue;
-        char output[MAX_INPUT_SIZE] = {0};
-        ssize_t received = protocol_client_receive(self->protocol, output);
-        if (received <= 0) break;
-        printf("%s", output);
-        fflush(stdin);
-    	free(buffer);
+        //char output[MAX_INPUT_SIZE] = {0};
+        //ssize_t received = protocol_client_receive(self->protocol, output);
+        //if (received <= 0) break;
+        //printf("%s", output);
+        //fflush(stdin);
+
     }
 
 }
