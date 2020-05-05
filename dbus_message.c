@@ -24,3 +24,9 @@ void dbus_message_destroy(dbus_message_t *self) {
 		free(self->parametros);
 	}
 }
+
+void dbus_message_str_representation(dbus_message_t *self) {
+	printf("Received message id: %d\n", self->id_mensaje);
+}
+
+

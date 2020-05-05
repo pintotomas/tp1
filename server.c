@@ -37,7 +37,11 @@ void server_run(server_t *self){
     while (true) {
         //char buffer[120] = {0};
         //Termino si no recibo nada mas del cliente
-        if (protocol_server_receive(self->protocol) <= 0) break; 
+        dbus_message_t *msg = protocol_server_receive(self->protocol);
+        if (msg == NULL) break;
+        dbus_message_str_representation(msg);
+        dbus_message_destroy(msg);
+        free(msg);   
         //printf("*******RECEIVED MESSAGE***********\n");
         //printf("MESSAGE: %s", buffer);
         //char *buffer2 = "Mund\n";

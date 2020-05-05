@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /* line es una linea que recibe el cliente
 Devuelve la tira de bytes que debe ser enviada al servidor

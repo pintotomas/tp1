@@ -80,38 +80,47 @@ ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
 }
 
 //ssize_t protocol_server_receive(protocol_t *self, char *buffer) {
-ssize_t protocol_server_receive(protocol_t *self) {    
+dbus_message_t* protocol_server_receive(protocol_t *self) {    
     dbus_decoder_t *dbus_decoder = malloc(sizeof(dbus_decoder_t));
     dbus_decoder_init(dbus_decoder);
     //Recibo primeros 16 bytes con descripcion del header y body
     unsigned char buffer[16];
     ssize_t received = socket_receive(self->client_socket, buffer, 16);
-
+    if (received <= 0) {
+        free(dbus_decoder->decoded_message);
+        free(dbus_decoder);
+        return NULL;
+    }
     ssize_t remaining_bytes = dbus_decoder_set_descriptions(dbus_decoder, buffer);
     unsigned char buffer2[remaining_bytes];
-    printf("Waiting to receive: %ld bytes\n", remaining_bytes);
+    //printf("Waiting to receive: %ld bytes\n", remaining_bytes);
     received = socket_receive(self->client_socket, buffer2, remaining_bytes);
-    printf("Received: %ld bytes\n", received);
+    if (received <= 0) {
+        free(dbus_decoder->decoded_message);
+        free(dbus_decoder);
+        return NULL;
+    }
+    //printf("Received: %ld bytes\n", received);
 
     // for (int j = 0; j < remaining_bytes; j++) {
     //     printf("Current byte received: %x, (char): %c\n", buffer2[j], buffer2[j]);   
     //     //printf("Current byte: %x\n", body[j]);    
     // } 
     dbus_message_t * message = dbus_decoder_decode(dbus_decoder, buffer2);
-    printf("Ruta: %s\n", message->ruta); 
-    printf("Destino: %s\n", message->destino); 
-    printf("Metodo: %s\n", message->metodo); 
-    printf("Interfaz: %s\n", message->interfaz); 
-    printf("Id mensaje: %d\n", message->id_mensaje);
-    printf("@@@PARAMETROS@@@: \n");
-    for (int u = 0; u < message->cantidad_parametros; u++) {
-        printf("Param[%d]: %s\n", u, message->parametros[u]); 
-    }
+    // printf("Ruta: %s\n", message->ruta); 
+    // printf("Destino: %s\n", message->destino); 
+    // printf("Metodo: %s\n", message->metodo); 
+    // printf("Interfaz: %s\n", message->interfaz); 
+    // printf("Id mensaje: %d\n", message->id_mensaje);
+    // printf("@@@PARAMETROS@@@: \n");
+    // for (int u = 0; u < message->cantidad_parametros; u++) {
+    //     printf("Param[%d]: %s\n", u, message->parametros[u]); 
+    // }
     free(dbus_decoder);
     //Esto lo deberia hacer el server despues
-    dbus_message_destroy(message);
-    free(message);
-    return 0;
+    // dbus_message_destroy(message);
+    // free(message);
+    return message;
 }
 
 ssize_t protocol_server_send(protocol_t *self, char *buffer) {
