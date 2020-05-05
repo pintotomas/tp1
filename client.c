@@ -38,7 +38,7 @@ bool client_init(client_t *self, char *host, char *port, char *filename) {
 
 void client_run(client_t *self) {
 	char *buffer = {0};
-    int id_mensaje = 24;
+    int id_mensaje = 1;
     while (true) {
         /* TO DO: Buffer deberia ser dinamico ya que al leer lineas nunca sabemos hasta donde lleguen */
         /*MALLOC Y REALLOC*/

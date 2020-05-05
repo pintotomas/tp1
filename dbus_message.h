@@ -28,6 +28,7 @@ void dbus_message_init(dbus_message_t *self);
 
 void dbus_message_destroy(dbus_message_t *self);
 
+/* Imprime por stdout la representacion de este mensaje */
 void dbus_message_str_representation(dbus_message_t *self);
 
 #endif
