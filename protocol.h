@@ -26,7 +26,7 @@ ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje);
 
 // Se recibe un mensaje del server al cliente
 // Se devuelve la cantidad de bytes recibidos
-ssize_t protocol_client_receive(protocol_t *self, char *buffer);
+ssize_t protocol_client_receive(protocol_t *self, char *buffer, int bytes);
 
 dbus_message_t* protocol_server_receive(protocol_t *self);
 

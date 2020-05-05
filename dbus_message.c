@@ -43,5 +43,3 @@ void dbus_message_str_representation(dbus_message_t *self) {
 	}
 	printf("\n");
 }
-
-

@@ -36,35 +36,39 @@ bool client_init(client_t *self, char *host, char *port, char *filename) {
     return true;
 }
 
+static void _print_client_response(char *msg, int id) {
+
+    unsigned char bytes[4];
+    bytes[0] = (id >> 24) & 0xFF;
+    bytes[1] = (id >> 16) & 0xFF;
+    bytes[2] = (id >> 8) & 0xFF;
+    bytes[3] = id & 0xFF;
+    printf("* Id: 0x%02x%02x%02x%02x: %s", bytes[0], bytes[1], bytes[2], bytes[3], msg);
+
+}
+
 void client_run(client_t *self) {
 	char *buffer = {0};
     int id_mensaje = 1;
     while (true) {
-        /* TO DO: Buffer deberia ser dinamico ya que al leer lineas nunca sabemos hasta donde lleguen */
-        /*MALLOC Y REALLOC*/
 
-        // char buffer[MAX_INPUT_SIZE] = {0};
-        // if (!fgets(buffer, MAX_INPUT_SIZE, self->input)) break;
         if (buffer != NULL) free(buffer);
     	buffer = input_reader_get_next_line(self->input_reader);
     	if (buffer == NULL) return;
-        printf("\nNEW LINE: %s\n", buffer);
-        
-        /* TO DO: Antes de enviar, procesar lo recibido y armar la cadena correspondiente segun al enunciado */
         ssize_t send = protocol_client_send(self->protocol, buffer, id_mensaje);
         id_mensaje++;
-        // printf("SENTD %ld BYTES\n", send);
+        
         if (send == -1) { 
             free(buffer);
             break;
         }
         else if (send == 0) continue;
-        //char output[MAX_INPUT_SIZE] = {0};
-        //ssize_t received = protocol_client_receive(self->protocol, output);
-        //if (received <= 0) break;
-        //printf("%s", output);
-        //fflush(stdin);
-
+        char response[3] = {0};
+        ssize_t rcvd_bytes = protocol_client_receive(self->protocol, response, 3);
+        if (rcvd_bytes <= 0) {
+            fprintf(stderr, "Server closed/down\n");
+        }
+        _print_client_response(response, id_mensaje);
     }
 
 }

@@ -75,8 +75,8 @@ ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje) {
     
 }
 
-ssize_t protocol_client_receive(protocol_t *self, char *buffer) {
-    return socket_receive(self->server_socket, buffer, 5);
+ssize_t protocol_client_receive(protocol_t *self, char *buffer, int bytes) {
+    return socket_receive(self->server_socket, buffer, bytes);
 }
 
 //ssize_t protocol_server_receive(protocol_t *self, char *buffer) {

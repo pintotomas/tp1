@@ -35,18 +35,14 @@ bool server_init(server_t *self, char *port){
 void server_run(server_t *self){
     protocol_server_accept(self->protocol);
     while (true) {
-        //char buffer[120] = {0};
-        //Termino si no recibo nada mas del cliente
+
         dbus_message_t *msg = protocol_server_receive(self->protocol);
         if (msg == NULL) break;
         dbus_message_str_representation(msg);
         dbus_message_destroy(msg);
-        free(msg);   
-        //printf("*******RECEIVED MESSAGE***********\n");
-        //printf("MESSAGE: %s", buffer);
-        //char *buffer2 = "Mund\n";
-        //fflush(stdin);
-        //protocol_server_send(self->protocol, buffer2);
+        free(msg);  
+        char *buffer = "OK\n";
+        protocol_server_send(self->protocol, buffer);
     }
 }
 
