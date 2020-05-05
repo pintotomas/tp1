@@ -20,8 +20,7 @@ typedef struct {
 } dbus_encoder_t;
 
 typedef struct {
-	unsigned char *encoded_body;
-	unsigned char *encoded_header;
+	unsigned char *encoded_message; //Contiene header+body
 	uint32_t header_length;
 	uint32_t body_length;
 } dbus_decoder_t;
@@ -31,7 +30,7 @@ typedef struct {
 //recibe un unsigned char de 16 bytes con informacion de header+body
 ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *message);
 
-void dbus_decoder_set_body_and_header(dbus_decoder_t *self, unsigned char *message);
+void dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message);
 
 void dbus_decoder_init(dbus_decoder_t *self);
 

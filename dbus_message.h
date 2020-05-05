@@ -26,4 +26,10 @@ void dbus_message_destroy(dbus_message_t *self);
 
 void dbus_message_str_representation(dbus_message_t *self);
 
+//Decodifica el mensaje binario siguiendo el protocolo dbus
+//Devuelve un struct dbus_message_t que el usuario debe destruir 
+//Luego de utilizarlo
+void dbus_message_str_representation(dbus_message_t *self);
+
+
 #endif

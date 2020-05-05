@@ -335,30 +335,42 @@ bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
 }
 
 void dbus_decoder_init(dbus_decoder_t *self) {
-    self->encoded_body = NULL;
-    self->encoded_header = NULL;
+    self->encoded_message = NULL;
     self->header_length = 0;
     self->body_length = 0;
 }
 
-ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *m) {
-    printf("@@@@@@@Received 16 bytes@@@@@@\n");
-    for (int j = 0; j < 16; j++) {
-        printf("Current byte: %x\n", m[j]);   
+void dbus_decoder_decode(dbus_decoder_t *self, unsigned char *message) {
+    printf("@@@@@@@Received 120 bytes@@@@@@\n");
+
+    self->encoded_message = message;
+    for (int j = 0; j < self->header_length + self->body_length - 16; j++) {
+        printf("Current byte: %x, (Char: %c) \n", message[j], message[j]);   
         //printf("Current byte: %x\n", body[j]);    
     } 
+    return;
+}
+
+ssize_t dbus_decoder_set_descriptions(dbus_decoder_t *self, unsigned char *m) {
+
     //Little endian
-    self->header_length = m[4] + (m[5] << 8) + (m[6] << 16) + (m[7] << 24);
-    self->body_length = m[12] + (m[13] << 8) + (m[14] << 16) + (m[15] << 24);
+    // printf("@@@@@@@@@@qReceived: %d bytes@@@@@@@q\n", 16);
+
+    // for (int j = 0; j < 16; j++) {
+    //     printf("Current byte received: %x, (char): %c\n", m[j], m[j]);   
+    //     //printf("Current byte: %x\n", body[j]);    
+    // } 
+    self->body_length = m[4] + (m[5] << 8) + (m[6] << 16) + (m[7] << 24);
+    self->header_length = m[12] + (m[13] << 8) + (m[14] << 16) + (m[15] << 24);
 
     //Big endian
     //self->header_length = (m[4]  << 24) + (m[5] << 16) + (m[6] << 8) + m[7];
     //self->body_length = (m[12] << 24) + (m[13] << 16) + (m[14] << 8) + m[15];
-    ssize_t remaining_bytes = _get_closest_multiply(self->header_length, 8)
-    //                      - 16 + self->body_length;
-    // printf("header len: %d\n", self->header_length);   
+    ssize_t remaining_bytes = _get_closest_multiply(self->header_length 
+        - 16 + self->body_length, 8);
+    //printf("header len: %d\n", self->header_length);   
     // printf("body len: %d\n", self->body_length);   
-    // printf("remaining byetes: %ld\n", remaining_bytes);   
+    //printf("remaining byetes: %ld\n", remaining_bytes);   
 
     return remaining_bytes;
 }

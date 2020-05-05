@@ -85,17 +85,18 @@ ssize_t protocol_server_receive(protocol_t *self) {
     //Recibo primeros 16 bytes con descripcion del header y body
     unsigned char buffer[16];
     ssize_t received = socket_receive(self->client_socket, buffer, 16);
+    
     ssize_t remaining_bytes = dbus_decoder_set_descriptions(dbus_decoder, buffer);
     unsigned char buffer2[remaining_bytes];
     printf("Waiting to receive: %ld bytes\n", remaining_bytes);
-
     received = socket_receive(self->client_socket, buffer2, remaining_bytes);
     printf("Received: %ld bytes\n", received);
 
-    for (int j = 0; j < remaining_bytes; j++) {
-        printf("Current byte: %x\n", buffer2[j]);   
-        //printf("Current byte: %x\n", body[j]);    
-    } 
+    // for (int j = 0; j < remaining_bytes; j++) {
+    //     printf("Current byte received: %x, (char): %c\n", buffer2[j], buffer2[j]);   
+    //     //printf("Current byte: %x\n", body[j]);    
+    // } 
+    dbus_decoder_decode(dbus_decoder, buffer2);
 
     free(dbus_decoder);
     return 0;
