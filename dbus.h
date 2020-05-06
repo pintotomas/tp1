@@ -44,6 +44,10 @@ dbus_message_t * dbus_decoder_decode(dbus_decoder_t *self,
 
 void dbus_decoder_init(dbus_decoder_t *self);
 
+/*Encodea el mensaje (llamada a funcion remota)
+ utilizando el formato de DBUS.
+ Se almacena en body y header, y sus longitudes
+ en header_length y body_length*/
 bool dbus_encoder_encode(dbus_encoder_t *self); 
 
 /* line debe ser un puntero no nulo */

@@ -11,7 +11,7 @@ typedef struct {
 } protocol_t;
 
 // Devuelve false si falla la inicializacion
-// Hace connect 
+// Se conecta al servidor en el puerto 'port' del host 'host'
 bool protocol_client_init(protocol_t *self, const char *host, const char *port);
 
 // Devuelve false si falla la inicializacion
@@ -28,6 +28,9 @@ ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje);
 // Se devuelve la cantidad de bytes recibidos
 ssize_t protocol_client_receive(protocol_t *self, char *buffer, int bytes);
 
+// Devuelve el proximo mensaje del cliente decodificado 
+// El mensaje devuelto debe ser destruido luego de su utilizacion
+// por el usuario
 dbus_message_t* protocol_server_receive(protocol_t *self);
 
 ssize_t protocol_server_send(protocol_t *self, char *buffer, int size);
