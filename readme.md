@@ -14,5 +14,7 @@ El problema se trata de replicar el protocolo DBUS utilizando sockets TCP/IP en 
 ## Aclaraciones
 
 - Falta documentacion de funciones
+- Falta manejo de algunas funciones que puedan fallar
 - Falta refactorizar algunos metodos de la clase dbus_encoder ya que me quedaron muy largos
+- Falta agregar static a algunas funciones privadas en dbus.c
 - Falta exportar algunos metodos estaticos (privados) de dbus.c a nuevas librerias
