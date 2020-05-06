@@ -4,11 +4,6 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-/* Separa los strings en line y los guarda en el array strings.
-   Se utiliza por primera vez el delimitador delim1, y luego delim2 hasta finalizar el recorrido del string.
-   si se pasa por parametro delim3, se aplicara antes de iniciar los demas splits
- */
-
 int _count_chars(const char* str, char ch)
 {
     int count = 0;
@@ -113,8 +108,8 @@ void _create_header(dbus_encoder_t *self, char* params[],
     //array con las descripciones de cada parametro a enviar.
     unsigned char array[4][4] =
 { 
-    { 0x01, 0x01, 0x6f, 0x00 },
     { 0x06, 0x01, 0x73, 0x00 },
+    { 0x01, 0x01, 0x6f, 0x00 },
     { 0x02, 0x01, 0x73, 0x00 },
     { 0x03, 0x01, 0x73, 0x00 }
 };
