@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+
 /* Separa los strings en line y los guarda en el array strings.
    Se utiliza por primera vez el delimitador delim1, y luego delim2 hasta finalizar el recorrido del string.
    si se pasa por parametro delim3, se aplicara antes de iniciar los demas splits
@@ -32,7 +33,9 @@ void _calculate_body_length(dbus_encoder_t *self, char* strings[],
     }    
     self->body_length = body_total_length;
 }   
-
+/*
+Encodea el body en self->body
+*/
 void _make_body(dbus_encoder_t *self, char* strings[], int params_quantity) {
     unsigned char body[self->body_length];
     int body_position = 0;
@@ -260,7 +263,7 @@ static char **_split2(const char *str, char sep){
     return cadena_separada; 
     }
 
-static size_t caracteres_strv(char** strv, size_t *cantidad_subcadenas){
+static size_t _caracteres_strv(char** strv, size_t *cantidad_subcadenas){
     size_t cantidad_letras = 0;
     size_t subcadenas = 0;
     size_t palabra_actual = 0;
@@ -281,14 +284,12 @@ static size_t caracteres_strv(char** strv, size_t *cantidad_subcadenas){
     }
 
 static char *_join(char **strv, char sep){
-
     size_t *subcads = malloc(sizeof(size_t));
     if (!subcads || !strv){
         free(subcads);
         return NULL;
         }
-    size_t letras_strv = caracteres_strv(strv,subcads);
-//Deberia restar uno porque no habria que agregar un separador al final, pero como necesito el \0 lo dejo tal cual
+    size_t letras_strv = _caracteres_strv(strv,subcads);
     size_t tamano_str = letras_strv+*subcads; 
     if (tamano_str == 0){
         tamano_str = 2;
@@ -319,7 +320,7 @@ static char *_join(char **strv, char sep){
     return resultado;
     }
 
-int _strv_len (char *strv[]) {
+int _strv_len(char *strv[]) {
     int len = 0;
     while (strv[len] != NULL){
         len++;
