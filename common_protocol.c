@@ -48,7 +48,7 @@ bool protocol_server_accept(protocol_t *self){
 ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje) {
     dbus_encoder_t *dbus_encoder = malloc(sizeof(dbus_encoder_t));
     dbus_encoder_init(dbus_encoder, buffer, id_mensaje);
-    dbus_encoder_create_send_message(dbus_encoder);
+    dbus_encoder_encode(dbus_encoder);
     ssize_t bytes_sent = socket_send(self->server_socket,
          dbus_encoder->header, dbus_encoder->header_length);
     bytes_sent += socket_send(self->server_socket,

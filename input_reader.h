@@ -7,7 +7,6 @@
 
 typedef struct {
 	FILE *input;
-	int position; //position in bytes
 } input_reader_t;
 
 // Returns false if anything fails at init

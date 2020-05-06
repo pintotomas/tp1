@@ -44,7 +44,7 @@ dbus_message_t * dbus_decoder_decode(dbus_decoder_t *self,
 
 void dbus_decoder_init(dbus_decoder_t *self);
 
-bool dbus_encoder_create_send_message(dbus_encoder_t *self); 
+bool dbus_encoder_encode(dbus_encoder_t *self); 
 
 /* line debe ser un puntero no nulo */
 void dbus_encoder_init(dbus_encoder_t *self, char *line, int message_id);

@@ -328,7 +328,7 @@ int _strv_len(char *strv[]) {
     return len;
 }
 
-bool dbus_encoder_create_send_message(dbus_encoder_t *self) {
+bool dbus_encoder_encode(dbus_encoder_t *self) {
     //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..)<)
     char **args = _split2(self->line_to_encode, ' ');
     int args_len = _strv_len(args);
