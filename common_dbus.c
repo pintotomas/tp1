@@ -4,6 +4,10 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
+
+// ser consistente con la forma de codear
+// si en otros arhivos usaste llaves al lado de la funcion,
+// no hacerlo diferente aca
 int _count_chars(const char* str, char ch)
 {
     int count = 0;
@@ -88,6 +92,10 @@ void _calculate_header_size(dbus_encoder_t *self, char* params[],
 /* Genera un header de largo header_size bytes 
 params debe estar en el orden <destino> <path> <interfaz> <metodo>
 */
+
+// Se aclaro en las clases que las funciones no deben tener mas
+// de 20 lineas, mas o menos
+// esta tiene 70. Refactorizar urgente
 void _create_header(dbus_encoder_t *self, char* params[],
                     int args_quantity, int params_q) {
     unsigned char header[self->header_length];
@@ -106,6 +114,7 @@ void _create_header(dbus_encoder_t *self, char* params[],
     memcpy(&header[header_position], &dummy_header_length, 4);
     header_position += 4;
     //array con las descripciones de cada parametro a enviar.
+    // poner los valores como constantes asi se entiende que hace cada una
     unsigned char array[4][4] =
 { 
     { 0x06, 0x01, 0x73, 0x00 },
@@ -202,6 +211,7 @@ Guarda la longitud de la mayor cadena encontrada en mayor_longitud
 */
 static size_t _contar_separadores(const char *str, char separador,
                                    size_t* mayor_longitud) {
+    // podrias poner la inicializacion de las variables del mismo tipo en una linea
     size_t k;
     size_t cantidad = 0;
     size_t longitud_str = strlen(str);
@@ -225,6 +235,7 @@ static size_t _contar_separadores(const char *str, char separador,
         *mayor_longitud = max_largo;
         }
     return cantidad;
+    // corregir los padding de las llaves
     }
 
 static char **_split2(const char *str, char sep){
@@ -278,6 +289,7 @@ static size_t _caracteres_strv(char** strv, size_t *cantidad_subcadenas){
     return cantidad_letras;
     }
 
+// funcion muy larga
 static char *_join(char **strv, char sep){
     size_t *subcads = malloc(sizeof(size_t));
     if (!subcads || !strv){
@@ -323,6 +335,7 @@ int _strv_len(char *strv[]) {
     return len;
 }
 
+// funcion muy larga
 bool dbus_encoder_encode(dbus_encoder_t *self) {
     //Almacena los argumentos, (ruta, destino, interfaz, metodo(arg1, ..)<)
     char **args = _split2(self->line_to_encode, ' ');

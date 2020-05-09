@@ -2,6 +2,7 @@
 #include <string.h>
 
 bool protocol_server_init(protocol_t *self, const char *port) {
+    // uso innecesario del heap
     socket_t *socket = malloc(sizeof(socket_t));
     if (socket_bind_and_listen(socket, port) == -1){
         free(socket);
@@ -16,6 +17,9 @@ bool protocol_server_init(protocol_t *self, const char *port) {
 
 bool protocol_client_init(protocol_t *self, const char *host, const char *port){
 	bool error = false;
+    // separar en protocolo_cliente y protocolo_server
+    // uso innecesario del heap
+    // si la funcion dice cliente por que creas un server aca?
     socket_t *server = malloc(sizeof(socket_t));
     if (socket_connect(server, host, port) != 0){
     	error = true;
@@ -46,6 +50,7 @@ bool protocol_server_accept(protocol_t *self){
 }
 
 ssize_t protocol_client_send(protocol_t *self, char *buffer, int id_mensaje) {
+    // uso innesario del heap
     dbus_encoder_t *dbus_encoder = malloc(sizeof(dbus_encoder_t));
     dbus_encoder_init(dbus_encoder, buffer, id_mensaje);
     dbus_encoder_encode(dbus_encoder);

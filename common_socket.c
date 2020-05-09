@@ -11,6 +11,8 @@
 #include <errno.h>
 
 void socket_init(socket_t *self, int fd) {
+    // la inicializacion del fd deberia hacerse en esta funcion
+    // no deberia recibir el fd de afuera
     self->fd = fd;
 }
 

@@ -23,6 +23,8 @@ void input_reader_destroy(input_reader_t *self) {
 /*
 funcion que reemplaza a getline para el standard c99
 */
+
+// tambien es una funcion de 40 lineas, ver si se puede achicar
 static ssize_t _my_getline(char **restrict lineptr,
        size_t *restrict n, FILE *restrict stream) {
     if (lineptr == NULL || n == NULL || stream == NULL) {
